@@ -28,5 +28,29 @@
     "maxStack": 1,
     "equipSlot": "offhand",
     "statBonus": { "defense": 2 }
+  },
+  {
+    "id": "veil-shard",
+    "name": "Veil Shard",
+    "type": "quest",
+    "description": "A crystalline fragment of the ancient Veil. It hums faintly near other Stones.",
+    "stackable": false,
+    "maxStack": 1
+  },
+  {
+    "id": "goblin-coin",
+    "name": "Goblin Coin",
+    "type": "currency",
+    "description": "A crude copper coin stamped with a goblin skull. Worth little, but proof of a kill.",
+    "stackable": true,
+    "maxStack": 99
+  },
+  {
+    "id": "iron-badge",
+    "name": "Iron Guard Badge",
+    "type": "quest",
+    "description": "The badge of the Iron Guard. Worn by those who have sworn to protect Ironveil.",
+    "stackable": false,
+    "maxStack": 1
   }
 ]

@@ -7,8 +7,15 @@
     "expReward": 3
   },
   {
+    "id": "goblin-scout",
+    "name": "Goblin Scout",
+    "stats": { "hp": 12, "attack": 5, "defense": 2, "speed": 4 },
+    "lootTableId": "loot-goblin",
+    "expReward": 8
+  },
+  {
     "id": "goblin-boss",
-    "name": "Goblin Boss",
+    "name": "Gorak the Ironbreaker",
     "stats": { "hp": 30, "attack": 8, "defense": 4, "speed": 5 },
     "lootTableId": "loot-boss",
     "expReward": 30

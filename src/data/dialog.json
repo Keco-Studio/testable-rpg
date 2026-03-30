@@ -5,10 +5,10 @@
     "nodes": [
       {
         "id": "root",
-        "text": "Will you help the village?",
+        "text": "Stranger, I am Elder Aldric of Ironveil. The Veil — the ancient barrier that has protected us for centuries — is fracturing. A goblin warlord named Gorak the Ironbreaker has seized the Veil Stone in the northern castle. Without it, Ironveil will fall. Will you face Gorak?",
         "choices": [
           {
-            "text": "Yes",
+            "text": "I will stop Gorak and save the Veil.",
             "nextNodeId": "accepted",
             "actions": {
               "activateQuest": "main-quest",
@@ -19,7 +19,7 @@
       },
       {
         "id": "accepted",
-        "text": "Return when done.",
+        "text": "The village is counting on you. Gorak holds the northern castle. Seek allies in the village before you go — you will need them. Return victorious.",
         "choices": []
       }
     ]
@@ -30,10 +30,10 @@
     "nodes": [
       {
         "id": "root",
-        "text": "Can you clear the slime cave?",
+        "text": "Name's Roan. Slimes have flooded the eastern cave — they are poisoning the water supply. I have been tracking them for days but there are too many for one hunter. Clear out three of them and the cave will be safe again.",
         "choices": [
           {
-            "text": "I will help",
+            "text": "I will clear the cave.",
             "nextNodeId": "accepted",
             "actions": {
               "activateQuest": "slime-hunt",
@@ -44,7 +44,7 @@
       },
       {
         "id": "accepted",
-        "text": "Defeat three slimes.",
+        "text": "Defeat three slimes. They spit acid and travel in packs — do not let them surround you. I will be here when you return.",
         "choices": []
       }
     ]
@@ -55,10 +55,10 @@
     "nodes": [
       {
         "id": "root",
-        "text": "Will you join the guard or the mages?",
+        "text": "I am Kael Thornback. Ironveil has two answers to the goblin threat. The Iron Guard will march on Gorak head-on — steel against steel. The Veil Mages believe the barrier can be mended from within, ending the threat without a war. Both factions need a capable warrior. Where does your allegiance lie?",
         "choices": [
           {
-            "text": "Join the guard",
+            "text": "With the Iron Guard — we fight fire with steel.",
             "nextNodeId": "guard",
             "actions": {
               "activateQuest": "faction-choice",
@@ -66,7 +66,7 @@
             }
           },
           {
-            "text": "Join the mages",
+            "text": "With the Veil Mages — the Veil must be restored.",
             "nextNodeId": "mages",
             "actions": {
               "activateQuest": "faction-choice",
@@ -77,12 +77,83 @@
       },
       {
         "id": "guard",
-        "text": "The guard welcomes you.",
+        "text": "A warrior's choice. Report to Captain Vera at the garrison — she has your first orders. Fight well.",
         "choices": []
       },
       {
         "id": "mages",
-        "text": "The mages welcome you.",
+        "text": "A thoughtful choice. Seek Arch-Mage Solen in the tower to the east. She holds the key to mending the Veil.",
+        "choices": []
+      }
+    ]
+  },
+  {
+    "npcId": "npc-guard-captain",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Captain Vera, Iron Guard. Goblin scouts have been probing the village perimeter — Gorak is mapping our defenses before the main assault. Take them down before they report back.",
+        "choices": [
+          {
+            "text": "I will hunt them down.",
+            "nextNodeId": "accepted",
+            "conditions": { "flag": { "key": "joined-guard", "value": true } },
+            "actions": {
+              "activateQuest": "guard-patrol",
+              "setFlag": { "key": "captain-met", "value": true }
+            }
+          },
+          {
+            "text": "I am not with the Guard.",
+            "nextNodeId": "rejected"
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "Good. Eliminate two goblin scouts. They move fast and communicate by whistle — kill them before they signal. Dismissed.",
+        "choices": []
+      },
+      {
+        "id": "rejected",
+        "text": "Then you have no business at this garrison. Join the Iron Guard if you want a part in this fight.",
+        "choices": []
+      }
+    ]
+  },
+  {
+    "npcId": "npc-arch-mage",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "I am Arch-Mage Solen. The Veil is anchored by three Veil Stones — Gorak holds one. I have located a second, but the path is dangerous. Take this Veil Shard: it will resonate near any Veil Stone and confirm its location. Will you retrieve it?",
+        "choices": [
+          {
+            "text": "I will find the Veil Stone.",
+            "nextNodeId": "accepted",
+            "conditions": { "flag": { "key": "joined-mages", "value": true } },
+            "actions": {
+              "activateQuest": "veil-mending",
+              "giveItem": { "itemId": "veil-shard", "quantity": 1 },
+              "setFlag": { "key": "arch-mage-met", "value": true }
+            }
+          },
+          {
+            "text": "I fight for the Guard, not the Mages.",
+            "nextNodeId": "rejected"
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "The Shard will guide you. Bring back what you find — every Stone we recover weakens Gorak's hold on the Veil.",
+        "choices": []
+      },
+      {
+        "id": "rejected",
+        "text": "Then may the Guard's steel hold where the Veil cannot. I hope you are right about the direct approach.",
         "choices": []
       }
     ]

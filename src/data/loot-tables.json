@@ -7,6 +7,14 @@
     ]
   },
   {
+    "id": "loot-goblin",
+    "drops": [
+      { "itemId": "goblin-coin", "weight": 5 },
+      { "itemId": "health-potion", "weight": 2 },
+      { "itemId": "iron-badge", "weight": 1 }
+    ]
+  },
+  {
     "id": "loot-boss",
     "drops": [
       { "itemId": "shield", "weight": 1 },

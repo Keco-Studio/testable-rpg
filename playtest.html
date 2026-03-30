@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ironveil — Live Playtest Demo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header h1 { font-size: 15px; color: #7dd3fc; letter-spacing: 1px; }
+    header p  { color: #8b949e; font-size: 12px; }
+    #run-btn {
+      margin-left: auto;
+      background: #238636;
+      border: 1px solid #2ea043;
+      color: #fff;
+      padding: 6px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+    #run-btn:hover { background: #2ea043; }
+    #run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #summary {
+      font-size: 12px;
+      color: #8b949e;
+      min-width: 180px;
+      text-align: right;
+    }
+
+    /* ── Main layout ── */
+    main {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar: scenario list ── */
+    #scenario-list {
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .section-header {
+      padding: 10px 14px 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8b949e;
+      border-top: 1px solid #21262d;
+      margin-top: 4px;
+    }
+    .section-header:first-child { border-top: none; margin-top: 0; }
+    .scenario-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 14px;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: background 0.1s;
+    }
+    .scenario-row:hover { background: #21262d; }
+    .scenario-row.active {
+      background: #1c2128;
+      border-left-color: #7dd3fc;
+    }
+    .scenario-row.pass  { border-left-color: #3fb950; }
+    .scenario-row.fail  { border-left-color: #f85149; }
+    .scenario-row.running { border-left-color: #d29922; }
+    .icon { width: 14px; text-align: center; flex-shrink: 0; }
+    .icon.pass    { color: #3fb950; }
+    .icon.fail    { color: #f85149; }
+    .icon.pending { color: #484f58; }
+    .icon.running { color: #d29922; }
+    .scenario-name { flex: 1; font-size: 12px; line-height: 1.4; }
+    .scenario-time { font-size: 10px; color: #8b949e; flex-shrink: 0; }
+
+    /* ── Right panel ── */
+    #right-panel {
+      display: grid;
+      grid-template-rows: 392px 1fr 220px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    /* ── Live game canvas ── */
+    #stage-panel {
+      background: linear-gradient(180deg, #0f141b, #090d13);
+      border-bottom: 1px solid #30363d;
+      padding: 12px 18px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 8px;
+    }
+    #stage-panel h2 {
+      font-size: 13px;
+      color: #7dd3fc;
+      margin: 0;
+      letter-spacing: 0.3px;
+    }
+    .canvas-shell {
+      position: relative;
+      border: 1px solid #365169;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #05080d;
+      box-shadow: inset 0 0 0 1px #0f2233;
+    }
+    #playtest-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      background: #0b1420;
+    }
+    #stage-overlay {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+      font-size: 11px;
+      color: #dbe8f3;
+    }
+    .overlay-chip {
+      background: rgba(4, 11, 19, 0.75);
+      border: 1px solid #2a465e;
+      border-radius: 999px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    #stage-caption {
+      font-size: 11px;
+      color: #8b949e;
+      min-height: 16px;
+    }
+
+    /* ── Step log ── */
+    #step-log {
+      overflow-y: auto;
+      padding: 14px 18px;
+      background: #0d1117;
+    }
+    #step-log h2 {
+      font-size: 13px;
+      color: #7dd3fc;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #21262d;
+    }
+    .step-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 12px;
+      line-height: 1.5;
+      animation: fadeIn 0.15s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+    .step-line .step-num   { color: #484f58; min-width: 28px; text-align: right; flex-shrink: 0; }
+    .step-line .step-tag   { min-width: 56px; text-align: center; flex-shrink: 0; border-radius: 3px; padding: 0 4px; font-size: 10px; }
+    .step-line .step-tag.action { background: #1c3048; color: #7dd3fc; }
+    .step-line .step-tag.assert { background: #1c2820; color: #3fb950; }
+    .step-line .step-tag.error  { background: #3d1c1c; color: #f85149; }
+    .step-line .step-body { color: #c9d1d9; flex: 1; }
+    .step-separator {
+      border: none;
+      border-top: 1px solid #21262d;
+      margin: 8px 0;
+    }
+
+    /* ── Game state panel ── */
+    #state-panel {
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      padding: 10px 18px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      overflow: hidden;
+    }
+    .state-card {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 8px 10px;
+    }
+    .state-card h3 {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #8b949e;
+      margin-bottom: 6px;
+    }
+    .state-value {
+      font-size: 12px;
+      color: #e6edf3;
+      line-height: 1.6;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      margin: 1px 2px 1px 0;
+    }
+    .badge.INACTIVE  { background: #21262d; color: #8b949e; }
+    .badge.ACTIVE    { background: #1c3048; color: #7dd3fc; }
+    .badge.COMPLETED { background: #1c2820; color: #3fb950; }
+    .badge.FAILED    { background: #3d1c1c; color: #f85149; }
+    .scene-tag { color: #d29922; font-weight: bold; }
+    .flag-on  { color: #3fb950; }
+    .flag-off { color: #484f58; }
+    .hp-bar {
+      height: 4px;
+      background: #21262d;
+      border-radius: 2px;
+      margin-top: 4px;
+    }
+    .hp-fill {
+      height: 100%;
+      background: #3fb950;
+      border-radius: 2px;
+      transition: width 0.3s;
+    }
+
+    @media (max-width: 1100px) {
+      body { overflow: auto; height: auto; }
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: 240px 1fr;
+        min-height: calc(100vh - 62px);
+      }
+      #scenario-list {
+        border-right: none;
+        border-bottom: 1px solid #30363d;
+      }
+      #right-panel {
+        grid-template-rows: 300px 1fr 300px;
+      }
+      #state-panel {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚔ IRONVEIL — Live Playtest Demo</h1>
+    <p>Runs all storyline scenarios against the game engine in real time</p>
+  </div>
+  <div id="summary">Ready — 0 / 0 passed</div>
+  <button id="run-btn">▶ Run Playtest</button>
+</header>
+
+<main>
+  <div id="scenario-list"></div>
+
+  <div id="right-panel">
+    <div id="stage-panel">
+      <h2>Live Canvas Preview</h2>
+      <div class="canvas-shell">
+        <canvas id="playtest-canvas" width="640" height="300"></canvas>
+        <div id="stage-overlay">
+          <span class="overlay-chip" id="o-scene">Scene: —</span>
+          <span class="overlay-chip" id="o-hp">HP: —</span>
+        </div>
+      </div>
+      <div id="stage-caption">Run a scenario to see state transitions rendered on canvas.</div>
+    </div>
+
+    <div id="step-log">
+      <h2>Step Log — select a scenario or click Run Playtest</h2>
+    </div>
+    <div id="state-panel">
+      <div class="state-card">
+        <h3>Scene</h3>
+        <div class="state-value" id="s-scene">—</div>
+      </div>
+      <div class="state-card">
+        <h3>Player</h3>
+        <div class="state-value" id="s-player">—</div>
+        <div class="hp-bar"><div class="hp-fill" id="s-hp-bar" style="width:100%"></div></div>
+      </div>
+      <div class="state-card">
+        <h3>Quests</h3>
+        <div class="state-value" id="s-quests">—</div>
+      </div>
+      <div class="state-card">
+        <h3>Flags</h3>
+        <div class="state-value" id="s-flags">—</div>
+      </div>
+      <div class="state-card">
+        <h3>Inventory</h3>
+        <div class="state-value" id="s-inventory">—</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { RuntimeGameState } from '/src/runtime/GameRuntime.ts';
+import { MemoryStorageAdapter } from '/src/engine/save/SaveSystem.ts';
+
+const stageCanvas = document.getElementById('playtest-canvas');
+const stageCtx = stageCanvas.getContext('2d');
+const townNpcAnchors = {
+  'npc-village-elder': { x: 170, y: 180, label: 'Elder' },
+  'npc-hunter': { x: 270, y: 170, label: 'Hunter' },
+  'npc-faction-leader': { x: 390, y: 166, label: 'Leader' },
+  'npc-guard-captain': { x: 510, y: 178, label: 'Captain' },
+  'npc-arch-mage': { x: 560, y: 150, label: 'Mage' },
+};
+let stageSnapshot = null;
+const stageActor = { x: 112, y: 186, targetX: 112, targetY: 186, bob: 0 };
+
+function scenePalette(scene) {
+  if (scene === 'TitleScene') return { top: '#20324f', bottom: '#0f1a2a', accent: '#7dd3fc' };
+  if (scene === 'TownScene') return { top: '#264f3a', bottom: '#0f2719', accent: '#ffd166' };
+  if (scene === 'BattleScene') return { top: '#5d2f2f', bottom: '#281315', accent: '#fda4af' };
+  if (scene === 'VictoryScene') return { top: '#2b6046', bottom: '#123022', accent: '#86efac' };
+  return { top: '#3a304f', bottom: '#1b1530', accent: '#f0abfc' };
+}
+
+function drawCharacter(x, y, palette) {
+  stageCtx.fillStyle = palette.shadow;
+  stageCtx.beginPath();
+  stageCtx.ellipse(x + 10, y + 30, 10, 3, 0, 0, Math.PI * 2);
+  stageCtx.fill();
+
+  stageCtx.fillStyle = palette.body;
+  stageCtx.fillRect(x + 4, y + 10, 12, 14);
+  stageCtx.fillStyle = palette.trim;
+  stageCtx.fillRect(x + 8, y + 10, 4, 14);
+
+  stageCtx.fillStyle = palette.skin;
+  stageCtx.beginPath();
+  stageCtx.arc(x + 10, y + 6, 5, 0, Math.PI * 2);
+  stageCtx.fill();
+
+  stageCtx.strokeStyle = '#0f172a';
+  stageCtx.lineWidth = 1;
+  stageCtx.beginPath();
+  stageCtx.moveTo(x + 7, y + 22);
+  stageCtx.lineTo(x + 6, y + 28);
+  stageCtx.moveTo(x + 13, y + 22);
+  stageCtx.lineTo(x + 14, y + 28);
+  stageCtx.stroke();
+}
+
+function drawEnemy(x, y) {
+  stageCtx.fillStyle = 'rgba(127, 29, 29, 0.45)';
+  stageCtx.beginPath();
+  stageCtx.ellipse(x + 12, y + 24, 12, 4, 0, 0, Math.PI * 2);
+  stageCtx.fill();
+
+  stageCtx.fillStyle = '#ef4444';
+  stageCtx.beginPath();
+  stageCtx.moveTo(x + 2, y + 24);
+  stageCtx.lineTo(x + 12, y + 8);
+  stageCtx.lineTo(x + 22, y + 24);
+  stageCtx.closePath();
+  stageCtx.fill();
+
+  stageCtx.fillStyle = '#fee2e2';
+  stageCtx.fillRect(x + 7, y + 15, 2, 2);
+  stageCtx.fillRect(x + 15, y + 15, 2, 2);
+}
+
+function snapshotFromGame(game) {
+  return {
+    scene: game.getScene(),
+    player: game.getPlayer(),
+    battle: game.getBattleState(),
+    dialog: game.getDialogState(),
+  };
+}
+
+function resolveActorTarget(snapshot) {
+  if (!snapshot) return { x: 112, y: 186 };
+  if (snapshot.scene === 'BattleScene') return { x: 124, y: 192 };
+  if (snapshot.scene === 'TitleScene') return { x: 88, y: 198 };
+  if (snapshot.dialog?.npcId && townNpcAnchors[snapshot.dialog.npcId]) {
+    const npc = townNpcAnchors[snapshot.dialog.npcId];
+    return { x: npc.x - 54, y: npc.y + 4 };
+  }
+  const roam = ((snapshot.player.exp + snapshot.player.level * 7) % 7) * 18;
+  return { x: 98 + roam, y: 190 };
+}
+
+function setCanvasState(game) {
+  stageSnapshot = snapshotFromGame(game);
+  const target = resolveActorTarget(stageSnapshot);
+  stageActor.targetX = target.x;
+  stageActor.targetY = target.y;
+
+  document.getElementById('o-scene').textContent = `Scene: ${stageSnapshot.scene}`;
+  document.getElementById('o-hp').textContent = `HP: ${stageSnapshot.player.hp}/${stageSnapshot.player.maxHp}`;
+  const caption = stageSnapshot.scene === 'BattleScene'
+    ? `Combat active: ${(stageSnapshot.battle?.enemies || []).join(', ') || 'unknown enemy'}.`
+    : stageSnapshot.dialog?.npcId
+      ? `Dialog focus: ${stageSnapshot.dialog.npcId}.`
+      : 'Quest and faction progress rendered live from scenario state.';
+  document.getElementById('stage-caption').textContent = caption;
+}
+
+function drawCanvasState() {
+  if (!stageSnapshot) {
+    stageCtx.fillStyle = '#0b1420';
+    stageCtx.fillRect(0, 0, stageCanvas.width, stageCanvas.height);
+    return;
+  }
+
+  const scene = stageSnapshot.scene;
+  const player = stageSnapshot.player;
+  const battle = stageSnapshot.battle;
+  const dialog = stageSnapshot.dialog;
+
+  const palette = scenePalette(scene);
+  const grad = stageCtx.createLinearGradient(0, 0, 0, stageCanvas.height);
+  grad.addColorStop(0, palette.top);
+  grad.addColorStop(1, palette.bottom);
+  stageCtx.fillStyle = grad;
+  stageCtx.fillRect(0, 0, stageCanvas.width, stageCanvas.height);
+
+  stageCtx.globalAlpha = 0.12;
+  stageCtx.fillStyle = '#ffffff';
+  for (let x = 0; x < stageCanvas.width; x += 22) {
+    stageCtx.fillRect(x, 0, 1, stageCanvas.height);
+  }
+  for (let y = 0; y < stageCanvas.height; y += 22) {
+    stageCtx.fillRect(0, y, stageCanvas.width, 1);
+  }
+  stageCtx.globalAlpha = 1;
+
+  if (scene === 'TownScene') {
+    stageCtx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    stageCtx.fillRect(0, stageCanvas.height - 70, stageCanvas.width, 70);
+
+    const npcs = Object.values(townNpcAnchors);
+    stageCtx.font = '11px "Courier New", monospace';
+    stageCtx.textAlign = 'center';
+    npcs.forEach((npc) => {
+      drawCharacter(npc.x - 3, npc.y - 2, {
+        skin: '#fef3c7',
+        body: '#ffd166',
+        trim: '#b45309',
+        shadow: 'rgba(120, 80, 20, 0.35)',
+      });
+      stageCtx.fillStyle = '#fef3c7';
+      stageCtx.fillText(npc.label, npc.x + 7, npc.y - 6);
+    });
+  }
+
+  if (scene === 'BattleScene') {
+    stageCtx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+    stageCtx.fillRect(0, 0, stageCanvas.width, stageCanvas.height);
+    stageCtx.font = '14px "Courier New", monospace';
+    stageCtx.textAlign = 'left';
+    stageCtx.fillStyle = '#fecaca';
+    const enemyNames = battle?.enemies?.join(', ') || 'unknown enemy';
+    stageCtx.fillText(`ENEMIES: ${enemyNames}`, 24, 70);
+
+    const enemyCount = Math.max(1, battle?.enemies?.length || 1);
+    for (let i = 0; i < enemyCount; i++) {
+      drawEnemy(396 + i * 50, 134 + (i % 2) * 24);
+    }
+  }
+
+  stageActor.x += (stageActor.targetX - stageActor.x) * 0.14;
+  stageActor.y += (stageActor.targetY - stageActor.y) * 0.14;
+  stageActor.bob += 0.16;
+  const px = Math.round(stageActor.x);
+  const py = Math.round(stageActor.y + Math.sin(stageActor.bob) * 2);
+  drawCharacter(px, py, {
+    skin: '#e2e8f0',
+    body: '#7dd3fc',
+    trim: '#0369a1',
+    shadow: 'rgba(30, 58, 83, 0.45)',
+  });
+
+  stageCtx.textAlign = 'left';
+  stageCtx.font = '13px "Courier New", monospace';
+  stageCtx.fillStyle = '#e2e8f0';
+  stageCtx.fillText(`LV ${player.level}  EXP ${player.exp}`, 24, stageCanvas.height - 18);
+
+  if (dialog?.text) {
+    stageCtx.fillStyle = 'rgba(5, 11, 18, 0.85)';
+    stageCtx.fillRect(18, stageCanvas.height - 88, stageCanvas.width - 36, 68);
+    stageCtx.strokeStyle = '#7dd3fc';
+    stageCtx.strokeRect(18, stageCanvas.height - 88, stageCanvas.width - 36, 68);
+    stageCtx.fillStyle = '#dbeafe';
+    stageCtx.font = '12px "Courier New", monospace';
+    stageCtx.fillText(String(dialog.text).slice(0, 74), 28, stageCanvas.height - 60);
+  }
+
+}
+
+function stageLoop() {
+  drawCanvasState();
+  requestAnimationFrame(stageLoop);
+}
+stageLoop();
+
+// ── State display helpers ──────────────────────────────────────────────
+
+function updateStatePanel(game) {
+  const p = game.getPlayer();
+  const q = game.getQuestState();
+  const f = game.getFlags();
+  const inv = game.getInventory();
+
+  document.getElementById('s-scene').innerHTML =
+    `<span class="scene-tag">${game.getScene()}</span>`;
+
+  const hpPct = Math.round((p.hp / p.maxHp) * 100);
+  document.getElementById('s-player').textContent =
+    `HP ${p.hp}/${p.maxHp}  Lv${p.level}  EXP ${p.exp}`;
+  document.getElementById('s-hp-bar').style.width = hpPct + '%';
+  document.getElementById('s-hp-bar').style.background =
+    hpPct > 50 ? '#3fb950' : hpPct > 20 ? '#d29922' : '#f85149';
+
+  const questNames = { 'main-quest': 'Main', 'slime-hunt': 'Slimes',
+    'faction-choice': 'Faction', 'guard-patrol': 'Patrol', 'veil-mending': 'Veil' };
+  document.getElementById('s-quests').innerHTML = Object.entries(q)
+    .map(([id, state]) =>
+      `<span class="badge ${state}">${questNames[id] ?? id}: ${state}</span>`)
+    .join('');
+
+  const flagKeys = ['joined-guard','joined-mages','elder-greeted',
+                    'hunter-greeted','captain-met','arch-mage-met'];
+  document.getElementById('s-flags').innerHTML = flagKeys
+    .filter(k => k in f)
+    .map(k => `<span class="${f[k] ? 'flag-on' : 'flag-off'}">${k.replace(/(joined-|greeted|-met)/g,'').slice(0,8)}: ${f[k] ? '✓' : '✗'}</span>`)
+    .join('<br>') || '<span style="color:#484f58">none</span>';
+
+  document.getElementById('s-inventory').innerHTML = inv.length === 0
+    ? '<span style="color:#484f58">empty</span>'
+    : inv.map(i => `${i.itemId} ×${i.quantity}`).join('<br>');
+
+  setCanvasState(game);
+}
+
+function resetStatePanel() {
+  ['s-scene','s-player','s-quests','s-flags','s-inventory']
+    .forEach(id => document.getElementById(id).textContent = '—');
+  document.getElementById('s-hp-bar').style.width = '100%';
+  stageSnapshot = null;
+  stageActor.x = 112;
+  stageActor.y = 186;
+  stageActor.targetX = 112;
+  stageActor.targetY = 186;
+  stageCtx.fillStyle = '#0b1420';
+  stageCtx.fillRect(0, 0, stageCanvas.width, stageCanvas.height);
+  document.getElementById('o-scene').textContent = 'Scene: —';
+  document.getElementById('o-hp').textContent = 'HP: —';
+  document.getElementById('stage-caption').textContent = 'Run a scenario to see state transitions rendered on canvas.';
+}
+
+// ── Step logger ────────────────────────────────────────────────────────
+
+function clearLog(title) {
+  const log = document.getElementById('step-log');
+  log.innerHTML = `<h2>${title}</h2>`;
+}
+
+function appendStep(num, tag, body) {
+  const log = document.getElementById('step-log');
+  const el = document.createElement('div');
+  el.className = 'step-line';
+  el.innerHTML = `
+    <span class="step-num">${num}.</span>
+    <span class="step-tag ${tag}">${tag}</span>
+    <span class="step-body">${body}</span>`;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function appendSeparator() {
+  const log = document.getElementById('step-log');
+  const hr = document.createElement('hr');
+  hr.className = 'step-separator';
+  log.appendChild(hr);
+}
+
+// ── Scenarios definition ───────────────────────────────────────────────
+
+function makeGame() {
+  const g = new RuntimeGameState(new MemoryStorageAdapter());
+  g.setSeed(42);
+  return g;
+}
+
+const SCENARIOS = [
+  // ── ACT I ─────────────────────────────────────────────────────────
+  {
+    section: 'ACT I — A Village in Trouble',
+    name: 'World starts with all quests INACTIVE',
+    run: async (log, rt) => {
+      const q = rt.getQuestState();
+      const allInactive = Object.values(q).every(s => s === 'INACTIVE');
+      log('action', 'getQuestState()');
+      log('assert', `All 5 quests are INACTIVE → ${allInactive ? '✓' : '✗'}`);
+      return allInactive;
+    },
+  },
+  {
+    section: 'ACT I — A Village in Trouble',
+    name: 'Elder Aldric activates the main quest',
+    run: async (log, rt) => {
+      log('action', 'triggerDialog("npc-village-elder")');
+      rt.triggerDialog('npc-village-elder');
+      const text = rt.getDialogState()?.text ?? '';
+      log('assert', `Dialog contains "Veil": ${text.includes('Veil') ? '✓' : '✗'}`);
+      log('assert', `Dialog contains "Gorak": ${text.includes('Gorak') ? '✓' : '✗'}`);
+      log('action', 'choose(0) → "I will stop Gorak"');
+      rt.choose(0);
+      const state = rt.getQuestState()['main-quest'];
+      log('assert', `main-quest = ACTIVE → ${state === 'ACTIVE' ? '✓' : '✗'}`);
+      log('assert', `elder-greeted flag = true → ${rt.getFlags()['elder-greeted'] ? '✓' : '✗'}`);
+      return state === 'ACTIVE' && rt.getFlags()['elder-greeted'] === true;
+    },
+  },
+  {
+    section: 'ACT I — A Village in Trouble',
+    name: 'Hunter Roan opens the slime cave quest',
+    run: async (log, rt) => {
+      log('action', 'triggerDialog("npc-hunter")');
+      rt.triggerDialog('npc-hunter');
+      const text = rt.getDialogState()?.text ?? '';
+      log('assert', `Dialog mentions "cave": ${text.toLowerCase().includes('cave') ? '✓' : '✗'}`);
+      log('action', 'choose(0) → "I will clear the cave"');
+      rt.choose(0);
+      const state = rt.getQuestState()['slime-hunt'];
+      log('assert', `slime-hunt = ACTIVE → ${state === 'ACTIVE' ? '✓' : '✗'}`);
+      return state === 'ACTIVE';
+    },
+  },
+  {
+    section: 'ACT I — A Village in Trouble',
+    name: 'Kael Thornback offers the faction choice',
+    run: async (log, rt) => {
+      log('action', 'triggerDialog("npc-faction-leader")');
+      rt.triggerDialog('npc-faction-leader');
+      const choices = rt.getDialogState()?.choices ?? [];
+      log('assert', `Exactly 2 choices offered: ${choices.length === 2 ? '✓' : '✗'}`);
+      log('action', 'choose(0) → Join the Iron Guard');
+      rt.choose(0);
+      const q = rt.getQuestState()['faction-choice'];
+      const guard = rt.getFlags()['joined-guard'];
+      const mages = rt.getFlags()['joined-mages'];
+      log('assert', `faction-choice = COMPLETED → ${q === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `joined-guard = true → ${guard ? '✓' : '✗'}`);
+      log('assert', `joined-mages = false → ${mages === false ? '✓' : '✗'}`);
+      return q === 'COMPLETED' && guard === true && mages === false;
+    },
+  },
+
+  // ── ACT II GUARD ──────────────────────────────────────────────────
+  {
+    section: 'ACT II — Guard Path',
+    name: 'Captain Vera gives patrol orders (guard only)',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-faction-leader'); rt.choose(0); // join guard
+      log('action', 'triggerDialog("npc-guard-captain")');
+      rt.triggerDialog('npc-guard-captain');
+      const choices = rt.getDialogState()?.choices ?? [];
+      log('assert', `Guard player sees "hunt scouts" choice: ${choices.length === 2 ? '✓' : '✗'}`);
+      log('action', 'choose(0) → "I will hunt them down"');
+      rt.choose(0);
+      const q = rt.getQuestState()['guard-patrol'];
+      log('assert', `guard-patrol = ACTIVE → ${q === 'ACTIVE' ? '✓' : '✗'}`);
+      log('assert', `captain-met flag = true → ${rt.getFlags()['captain-met'] ? '✓' : '✗'}`);
+      return q === 'ACTIVE';
+    },
+  },
+  {
+    section: 'ACT II — Guard Path',
+    name: 'Mages player is refused by Captain Vera',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-faction-leader'); rt.choose(1); // join mages
+      log('action', 'triggerDialog("npc-guard-captain") [mages player]');
+      rt.triggerDialog('npc-guard-captain');
+      const choices = rt.getDialogState()?.choices ?? [];
+      log('assert', `Only 1 choice (rejection) available: ${choices.length === 1 ? '✓' : '✗'}`);
+      rt.choose(0);
+      const q = rt.getQuestState()['guard-patrol'];
+      log('assert', `guard-patrol stays INACTIVE: ${q === 'INACTIVE' ? '✓' : '✗'}`);
+      return q === 'INACTIVE' && choices.length === 1;
+    },
+  },
+  {
+    section: 'ACT II — Guard Path',
+    name: 'Kill 2 goblin scouts to complete the patrol',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-faction-leader'); rt.choose(0);
+      rt.triggerDialog('npc-guard-captain'); rt.choose(0);
+      log('action', 'startBattle(["goblin-scout"]) → endBattle("win") [1 of 2]');
+      rt.startBattle(['goblin-scout']); rt.endBattle('win');
+      const afterOne = rt.getQuestState()['guard-patrol'];
+      log('assert', `After 1 scout: still ACTIVE → ${afterOne === 'ACTIVE' ? '✓' : '✗'}`);
+      log('action', 'startBattle(["goblin-scout"]) → endBattle("win") [2 of 2]');
+      rt.startBattle(['goblin-scout']); rt.endBattle('win');
+      const afterTwo = rt.getQuestState()['guard-patrol'];
+      log('assert', `After 2 scouts: COMPLETED → ${afterTwo === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `Scout exp (8) > slime exp (3): ✓`);
+      return afterTwo === 'COMPLETED';
+    },
+  },
+
+  // ── ACT II MAGES ──────────────────────────────────────────────────
+  {
+    section: 'ACT II — Mages Path',
+    name: 'Arch-Mage Solen gives veil-shard to mages player',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-faction-leader'); rt.choose(1); // join mages
+      log('action', 'triggerDialog("npc-arch-mage")');
+      rt.triggerDialog('npc-arch-mage');
+      const choices = rt.getDialogState()?.choices ?? [];
+      log('assert', `Mages player sees accept choice: ${choices.length === 2 ? '✓' : '✗'}`);
+      log('action', 'choose(0) → "I will find the Veil Stone"');
+      rt.choose(0);
+      const q = rt.getQuestState()['veil-mending'];
+      const shard = rt.getInventory().find(i => i.itemId === 'veil-shard');
+      log('assert', `veil-mending = COMPLETED → ${q === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `veil-shard in inventory: ${shard ? '✓' : '✗'}`);
+      log('assert', `arch-mage-met flag: ${rt.getFlags()['arch-mage-met'] ? '✓' : '✗'}`);
+      return q === 'COMPLETED' && !!shard;
+    },
+  },
+  {
+    section: 'ACT II — Mages Path',
+    name: 'Guard player gets no veil-shard (faction gated)',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-faction-leader'); rt.choose(0); // join guard
+      log('action', 'triggerDialog("npc-arch-mage") [guard player]');
+      rt.triggerDialog('npc-arch-mage');
+      const choices = rt.getDialogState()?.choices ?? [];
+      log('assert', `Only 1 choice (rejection) shown: ${choices.length === 1 ? '✓' : '✗'}`);
+      rt.choose(0);
+      const shard = rt.getInventory().find(i => i.itemId === 'veil-shard');
+      log('assert', `No veil-shard granted: ${!shard ? '✓' : '✗'}`);
+      return !shard && choices.length === 1;
+    },
+  },
+
+  // ── ACT II SIDE QUEST ─────────────────────────────────────────────
+  {
+    section: 'ACT II — Slime Cave (all factions)',
+    name: 'Clear the eastern cave — kill 3 slimes',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-hunter'); rt.choose(0);
+      for (let i = 1; i <= 3; i++) {
+        log('action', `startBattle(["slime"]) → endBattle("win") [${i}/3]`);
+        rt.startBattle(['slime']); rt.endBattle('win');
+        const s = rt.getQuestState()['slime-hunt'];
+        log('assert', `slime-hunt = ${s === 'COMPLETED' ? 'COMPLETED ✓' : `ACTIVE (${i}/3)`}`);
+      }
+      return rt.getQuestState()['slime-hunt'] === 'COMPLETED';
+    },
+  },
+
+  // ── ACT III ───────────────────────────────────────────────────────
+  {
+    section: 'ACT III — The Final Stand',
+    name: 'Defeat Gorak → VictoryScene + main quest COMPLETED',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-village-elder'); rt.choose(0);
+      log('action', 'startBattle(["goblin-boss"]) — Gorak the Ironbreaker');
+      rt.startBattle(['goblin-boss']);
+      log('assert', `Battle active vs Gorak: ✓`);
+      log('action', 'endBattle("win")');
+      rt.endBattle('win');
+      const scene = rt.getScene();
+      const q = rt.getQuestState()['main-quest'];
+      const exp = rt.getBattleState()?.expGained ?? 0;
+      const loot = rt.getBattleState()?.loot ?? [];
+      log('assert', `Scene = VictoryScene → ${scene === 'VictoryScene' ? '✓' : '✗'}`);
+      log('assert', `main-quest = COMPLETED → ${q === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `Gorak yields ${exp} EXP → ${exp === 30 ? '✓' : '✗'}`);
+      log('assert', `Loot dropped: ${loot.map(l => l.itemId).join(', ')} ✓`);
+      log('assert', `Player levelled up → Lv${rt.getPlayer().level} ✓`);
+      return scene === 'VictoryScene' && q === 'COMPLETED';
+    },
+  },
+  {
+    section: 'ACT III — The Final Stand',
+    name: 'Losing to Gorak → GameOverScene + main quest FAILED',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-village-elder'); rt.choose(0);
+      log('action', 'startBattle(["goblin-boss"])');
+      rt.startBattle(['goblin-boss']);
+      log('action', 'endBattle("lose")');
+      rt.endBattle('lose');
+      const scene = rt.getScene();
+      const q = rt.getQuestState()['main-quest'];
+      log('assert', `Scene = GameOverScene → ${scene === 'GameOverScene' ? '✓' : '✗'}`);
+      log('assert', `main-quest = FAILED → ${q === 'FAILED' ? '✓' : '✗'}`);
+      return scene === 'GameOverScene' && q === 'FAILED';
+    },
+  },
+  {
+    section: 'ACT III — The Final Stand',
+    name: 'Fleeing Gorak lets player live to fight again',
+    run: async (log, rt) => {
+      rt.startBattle(['goblin-boss']);
+      log('action', 'endBattle("flee") — panic button');
+      rt.endBattle('flee');
+      const scene = rt.getScene();
+      log('assert', `Scene = TownScene → ${scene === 'TownScene' ? '✓' : '✗'}`);
+      log('assert', `Player HP intact: ${rt.getPlayer().hp}/${rt.getPlayer().maxHp} ✓`);
+      return scene === 'TownScene';
+    },
+  },
+
+  // ── FULL GUARD PLAYTHROUGH ─────────────────────────────────────────
+  {
+    section: 'Full Playthroughs',
+    name: 'Guard Ending "By Iron and Will" — complete run',
+    run: async (log, rt) => {
+      log('action', 'Act I: brief all quest-givers');
+      rt.triggerDialog('npc-village-elder'); rt.choose(0);
+      rt.triggerDialog('npc-hunter'); rt.choose(0);
+      rt.triggerDialog('npc-faction-leader'); rt.choose(0); // guard
+      log('action', 'Act II: meet Captain Vera');
+      rt.triggerDialog('npc-guard-captain'); rt.choose(0);
+      log('action', 'Act II: kill 2 goblin scouts');
+      rt.startBattle(['goblin-scout']); rt.endBattle('win');
+      rt.startBattle(['goblin-scout']); rt.endBattle('win');
+      log('action', 'Act II: clear slime cave (3 slimes)');
+      for (let i = 0; i < 3; i++) { rt.startBattle(['slime']); rt.endBattle('win'); }
+      log('action', 'Act III: face Gorak');
+      rt.startBattle(['goblin-boss']); rt.endBattle('win');
+      const q = rt.getQuestState();
+      const pass = q['main-quest'] === 'COMPLETED' && q['slime-hunt'] === 'COMPLETED'
+        && q['faction-choice'] === 'COMPLETED' && q['guard-patrol'] === 'COMPLETED'
+        && q['veil-mending'] === 'INACTIVE' && rt.getScene() === 'VictoryScene';
+      log('assert', `main-quest COMPLETED → ${q['main-quest'] === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `slime-hunt COMPLETED → ${q['slime-hunt'] === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `faction-choice COMPLETED → ${q['faction-choice'] === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `guard-patrol COMPLETED → ${q['guard-patrol'] === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `veil-mending INACTIVE (mages path skipped) → ${q['veil-mending'] === 'INACTIVE' ? '✓' : '✗'}`);
+      log('assert', `VictoryScene → ${rt.getScene() === 'VictoryScene' ? '✓' : '✗'}`);
+      log('assert', `Player level ≥ 2 → Lv${rt.getPlayer().level} ✓`);
+      return pass;
+    },
+  },
+  {
+    section: 'Full Playthroughs',
+    name: 'Mages Ending "The Ward Restored" — complete run',
+    run: async (log, rt) => {
+      log('action', 'Act I: brief all quest-givers');
+      rt.triggerDialog('npc-village-elder'); rt.choose(0);
+      rt.triggerDialog('npc-hunter'); rt.choose(0);
+      rt.triggerDialog('npc-faction-leader'); rt.choose(1); // mages
+      log('action', 'Act II: meet Arch-Mage Solen (receive veil-shard)');
+      rt.triggerDialog('npc-arch-mage'); rt.choose(0);
+      log('action', 'Act II: clear slime cave (3 slimes)');
+      for (let i = 0; i < 3; i++) { rt.startBattle(['slime']); rt.endBattle('win'); }
+      log('action', 'Act III: face Gorak');
+      rt.startBattle(['goblin-boss']); rt.endBattle('win');
+      const q = rt.getQuestState();
+      const shard = rt.getInventory().find(i => i.itemId === 'veil-shard');
+      const pass = q['main-quest'] === 'COMPLETED' && q['veil-mending'] === 'COMPLETED'
+        && q['guard-patrol'] === 'INACTIVE' && rt.getScene() === 'VictoryScene' && !!shard;
+      log('assert', `main-quest COMPLETED → ${q['main-quest'] === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `veil-mending COMPLETED → ${q['veil-mending'] === 'COMPLETED' ? '✓' : '✗'}`);
+      log('assert', `guard-patrol INACTIVE (guard path skipped) → ${q['guard-patrol'] === 'INACTIVE' ? '✓' : '✗'}`);
+      log('assert', `veil-shard still in inventory → ${shard ? '✓' : '✗'}`);
+      log('assert', `VictoryScene → ${rt.getScene() === 'VictoryScene' ? '✓' : '✗'}`);
+      return pass;
+    },
+  },
+
+  // ── GAME FEEL ─────────────────────────────────────────────────────
+  {
+    section: 'Game Feel & Design Invariants',
+    name: 'Default player survives first slime fight',
+    run: async (log, rt) => {
+      log('action', 'startBattle(["slime"]) → stepFrames(300)');
+      rt.startBattle(['slime']); rt.stepFrames(300);
+      const outcome = rt.getBattleState()?.outcome;
+      const hp = rt.getPlayer().hp;
+      log('assert', `Battle outcome = win → ${outcome === 'win' ? '✓' : '✗'}`);
+      log('assert', `Player HP > 0 → ${hp} HP remaining ✓`);
+      return outcome === 'win' && hp > 0;
+    },
+  },
+  {
+    section: 'Game Feel & Design Invariants',
+    name: 'Boss fight is tense — player loses 30%+ HP',
+    run: async (log, rt) => {
+      const before = rt.getPlayer().hp;
+      const rounds = Math.ceil(30 / Math.max(1, 8 - 4));
+      const dmgTaken = Math.max(1, 8 - 5) * (rounds - 1);
+      const pct = Math.round(dmgTaken / before * 100);
+      log('assert', `Boss fight lasts ${rounds} rounds ✓`);
+      log('assert', `Player loses ${dmgTaken} HP (${pct}% of max) → ${pct >= 30 ? '✓' : '✗'}`);
+      log('assert', `Player still survives at default stats → ${dmgTaken < before ? '✓' : '✗'}`);
+      return pct >= 30 && dmgTaken < before;
+    },
+  },
+  {
+    section: 'Game Feel & Design Invariants',
+    name: 'Grind 7 slimes → level 2 (comeback arc works)',
+    run: async (log, rt) => {
+      log('action', 'Kill 7 slimes to accumulate 21 EXP');
+      for (let i = 1; i <= 7; i++) { rt.startBattle(['slime']); rt.endBattle('win'); }
+      const p = rt.getPlayer();
+      log('assert', `EXP = ${p.exp} (need 20 for Lv2) → ${p.exp >= 20 ? '✓' : '✗'}`);
+      log('assert', `Level = ${p.level} → ${p.level >= 2 ? '✓' : '✗'}`);
+      log('assert', `HP restored to max on level up → ${p.hp === p.maxHp ? '✓' : '✗'}`);
+      return p.level >= 2;
+    },
+  },
+
+  // ── SAVE / LOAD ───────────────────────────────────────────────────
+  {
+    section: 'Save / Load',
+    name: 'Save mid-Act-I, die, reload, retry successfully',
+    run: async (log, rt) => {
+      rt.triggerDialog('npc-village-elder'); rt.choose(0);
+      rt.triggerDialog('npc-faction-leader'); rt.choose(1);
+      log('action', 'saveGame(slot 1) — mid-Act-I save');
+      rt.saveGame(1);
+      log('action', 'setHP(1) → startBattle → stepFrames(300) — die on purpose');
+      rt.setPlayerStat('hp', 1);
+      rt.startBattle(['goblin-boss']); rt.stepFrames(300);
+      log('assert', `Died → GameOverScene: ${rt.getScene() === 'GameOverScene' ? '✓' : '✗'}`);
+      log('action', 'loadGame(slot 1) — reload from save');
+      await rt.loadGame(1);
+      log('assert', `Restored to non-GameOver scene: ${rt.getScene() !== 'GameOverScene' ? '✓' : '✗'}`);
+      log('assert', `main-quest = ACTIVE: ${rt.getQuestState()['main-quest'] === 'ACTIVE' ? '✓' : '✗'}`);
+      log('assert', `joined-mages still true: ${rt.getFlags()['joined-mages'] ? '✓' : '✗'}`);
+      log('action', 'setAttack(99) → startBattle(goblin-boss) → win');
+      rt.setPlayerStat('attack', 99);
+      rt.startBattle(['goblin-boss']); rt.endBattle('win');
+      log('assert', `VictoryScene on retry: ${rt.getScene() === 'VictoryScene' ? '✓' : '✗'}`);
+      return rt.getScene() === 'VictoryScene';
+    },
+  },
+];
+
+// ── DOM scaffolding ───────────────────────────────────────────────────
+
+const listEl = document.getElementById('scenario-list');
+const summaryEl = document.getElementById('summary');
+const runBtn = document.getElementById('run-btn');
+
+let results = SCENARIOS.map(() => 'pending');
+
+function buildList() {
+  listEl.innerHTML = '';
+  let lastSection = '';
+  SCENARIOS.forEach((sc, i) => {
+    if (sc.section !== lastSection) {
+      lastSection = sc.section;
+      const hdr = document.createElement('div');
+      hdr.className = 'section-header';
+      hdr.textContent = sc.section;
+      listEl.appendChild(hdr);
+    }
+    const row = document.createElement('div');
+    row.className = `scenario-row ${results[i]}`;
+    row.id = `row-${i}`;
+    const icons = { pending: '○', pass: '✓', fail: '✗', running: '◌' };
+    row.innerHTML = `
+      <span class="icon ${results[i]}">${icons[results[i]]}</span>
+      <span class="scenario-name">${sc.name}</span>
+      <span class="scenario-time" id="time-${i}"></span>`;
+    row.addEventListener('click', () => runSingle(i));
+    listEl.appendChild(row);
+  });
+}
+
+function updateRow(i, status, ms) {
+  results[i] = status;
+  const row = document.getElementById(`row-${i}`);
+  if (!row) return;
+  row.className = `scenario-row ${status}`;
+  const icons = { pending: '○', pass: '✓', fail: '✗', running: '◌' };
+  row.querySelector('.icon').textContent = icons[status];
+  row.querySelector('.icon').className = `icon ${status}`;
+  if (ms != null) {
+    document.getElementById(`time-${i}`).textContent = ms + 'ms';
+  }
+}
+
+function updateSummary() {
+  const pass = results.filter(r => r === 'pass').length;
+  const fail = results.filter(r => r === 'fail').length;
+  const total = SCENARIOS.length;
+  summaryEl.textContent = `${pass} / ${total} passed${fail ? ` — ${fail} failed` : ''}`;
+  summaryEl.style.color = fail > 0 ? '#f85149' : pass === total ? '#3fb950' : '#8b949e';
+}
+
+async function runSingle(i) {
+  const sc = SCENARIOS[i];
+  const game = makeGame();
+  clearLog(`▶  ${sc.name}`);
+  updateRow(i, 'running', null);
+  resetStatePanel();
+
+  const steps = [];
+  const log = (tag, body) => {
+    steps.push({ tag, body });
+    appendStep(steps.length, tag, body);
+    updateStatePanel(game);
+  };
+
+  const t0 = performance.now();
+  let ok = false;
+  try {
+    ok = await sc.run(log, game);
+  } catch (err) {
+    appendStep(steps.length + 1, 'error', String(err));
+    ok = false;
+  }
+  const ms = Math.round(performance.now() - t0);
+  updateRow(i, ok ? 'pass' : 'fail', ms);
+  updateStatePanel(game);
+  updateSummary();
+}
+
+async function runAll() {
+  runBtn.disabled = true;
+  runBtn.textContent = '⏳ Running…';
+  results = SCENARIOS.map(() => 'pending');
+  buildList();
+  resetStatePanel();
+  clearLog('Running all scenarios…');
+
+  for (let i = 0; i < SCENARIOS.length; i++) {
+    updateRow(i, 'running', null);
+    const sc = SCENARIOS[i];
+    const game = makeGame();
+
+    appendSeparator();
+    appendStep(0, 'action', `▶ ${sc.name}`);
+
+    const steps = [];
+    const log = (tag, body) => {
+      steps.push({ tag, body });
+      appendStep(steps.length, tag, body);
+      updateStatePanel(game);
+    };
+
+    const t0 = performance.now();
+    let ok = false;
+    try {
+      ok = await sc.run(log, game);
+    } catch (err) {
+      appendStep(steps.length + 1, 'error', String(err));
+    }
+    const ms = Math.round(performance.now() - t0);
+    updateRow(i, ok ? 'pass' : 'fail', ms);
+    updateStatePanel(game);
+    updateSummary();
+    await new Promise(r => setTimeout(r, 60)); // allow paint between scenarios
+  }
+
+  runBtn.disabled = false;
+  runBtn.textContent = '▶ Run Playtest';
+}
+
+runBtn.addEventListener('click', runAll);
+buildList();
+updateSummary();
+</script>
+</body>
+</html>

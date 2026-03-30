@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ironveil Storyline Demo</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 15% 8%, #244560, #0f1824 58%);
+        color: #d6e3ee;
+        font-family: "Courier New", monospace;
+        padding: 18px;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.6px;
+        color: #9dd9ff;
+      }
+      #run {
+        margin-left: auto;
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid #4ca3d9;
+        background: #1a5d8b;
+        color: #f1f8ff;
+        cursor: pointer;
+        font: inherit;
+      }
+      #run:disabled { opacity: 0.6; cursor: wait; }
+      #status {
+        font-size: 12px;
+        color: #97b2c8;
+      }
+      #summary {
+        border: 1px solid #2e4a61;
+        border-radius: 10px;
+        background: rgba(10, 21, 33, 0.68);
+        padding: 10px 12px;
+        margin-bottom: 12px;
+      }
+      #summary-value { font-size: 14px; font-weight: bold; color: #9dd9ff; }
+      #results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 10px;
+      }
+      .card {
+        border: 1px solid #2b4358;
+        border-left-width: 5px;
+        border-radius: 10px;
+        background: rgba(12, 22, 35, 0.85);
+        padding: 10px;
+      }
+      .card.running { border-left-color: #f4b740; }
+      .card.pass { border-left-color: #36c26d; }
+      .card.fail { border-left-color: #ef5350; }
+      .name { font-size: 13px; color: #dcecff; margin-bottom: 6px; }
+      .meta { font-size: 11px; color: #9cb9cf; margin-bottom: 4px; }
+      .detail {
+        white-space: pre-wrap;
+        font-size: 11px;
+        color: #d1e3f3;
+        line-height: 1.35;
+        min-height: 70px;
+      }
+      .ok { color: #67e8a0; }
+      .bad { color: #fda4af; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>IRONVEIL - Complete Storyline Browser Demo</h1>
+      <span id="status">Ready</span>
+      <button id="run">Run Complete Storyline</button>
+    </header>
+
+    <section id="summary">
+      <div id="summary-value">0 / 0 passed</div>
+      <div id="summary-note">Runs both faction arcs, side quest, and save/load recovery.</div>
+    </section>
+
+    <main id="results"></main>
+
+    <script type="module">
+      import { RuntimeGameState } from '/src/runtime/GameRuntime.ts';
+      import { MemoryStorageAdapter } from '/src/engine/save/SaveSystem.ts';
+
+      const runButton = document.getElementById('run');
+      const statusEl = document.getElementById('status');
+      const summaryValue = document.getElementById('summary-value');
+      const resultsEl = document.getElementById('results');
+
+      function game() {
+        const g = new RuntimeGameState(new MemoryStorageAdapter());
+        g.setSeed(42);
+        return g;
+      }
+
+      const cases = [
+        {
+          name: 'Guard Arc to Finale',
+          run: async () => {
+            const g = game();
+            g.triggerDialog('npc-village-elder');
+            g.choose(0);
+            g.triggerDialog('npc-faction-leader');
+            g.choose(0);
+            g.triggerDialog('npc-guard-captain');
+            g.choose(0);
+            g.startBattle(['goblin-scout']); g.endBattle('win');
+            g.startBattle(['goblin-scout']); g.endBattle('win');
+            g.startBattle(['goblin-boss']); g.endBattle('win');
+
+            const qs = g.getQuestState();
+            const flags = g.getFlags();
+            return {
+              ok:
+                g.getScene() === 'VictoryScene' &&
+                qs['main-quest'] === 'COMPLETED' &&
+                qs['guard-patrol'] === 'COMPLETED' &&
+                flags['joined-guard'] === true &&
+                flags['joined-mages'] === false,
+              detail:
+                `Scene: ${g.getScene()}\n` +
+                `main-quest: ${qs['main-quest']}\n` +
+                `guard-patrol: ${qs['guard-patrol']}\n` +
+                `guard flag: ${String(flags['joined-guard'])}`,
+            };
+          },
+        },
+        {
+          name: 'Mages Arc to Finale',
+          run: async () => {
+            const g = game();
+            g.triggerDialog('npc-village-elder');
+            g.choose(0);
+            g.triggerDialog('npc-faction-leader');
+            g.choose(1);
+            g.triggerDialog('npc-arch-mage');
+            g.choose(0);
+            g.startBattle(['goblin-boss']); g.endBattle('win');
+
+            const qs = g.getQuestState();
+            const flags = g.getFlags();
+            const shard = g.getInventory().find((x) => x.itemId === 'veil-shard');
+            return {
+              ok:
+                g.getScene() === 'VictoryScene' &&
+                qs['main-quest'] === 'COMPLETED' &&
+                qs['veil-mending'] === 'COMPLETED' &&
+                flags['joined-mages'] === true &&
+                Boolean(shard),
+              detail:
+                `Scene: ${g.getScene()}\n` +
+                `main-quest: ${qs['main-quest']}\n` +
+                `veil-mending: ${qs['veil-mending']}\n` +
+                `veil-shard: ${shard ? 'yes' : 'no'}`,
+            };
+          },
+        },
+        {
+          name: 'Slime Cave Side Quest',
+          run: async () => {
+            const g = game();
+            g.triggerDialog('npc-hunter');
+            g.choose(0);
+            g.startBattle(['slime']); g.endBattle('win');
+            g.startBattle(['slime']); g.endBattle('win');
+            g.startBattle(['slime']); g.endBattle('win');
+
+            const qs = g.getQuestState();
+            return {
+              ok: qs['slime-hunt'] === 'COMPLETED',
+              detail: `slime-hunt: ${qs['slime-hunt']}\nplayer EXP: ${g.getPlayer().exp}`,
+            };
+          },
+        },
+        {
+          name: 'Save/Load Recovery Arc',
+          run: async () => {
+            const g = game();
+            g.triggerDialog('npc-village-elder');
+            g.choose(0);
+            g.triggerDialog('npc-faction-leader');
+            g.choose(1);
+            g.saveGame(1);
+            g.setPlayerStat('hp', 1);
+            g.startBattle(['goblin-boss']);
+            g.stepFrames(300);
+            const beforeLoad = g.getScene();
+            await g.loadGame(1);
+            g.setPlayerStat('attack', 99);
+            g.startBattle(['goblin-boss']); g.endBattle('win');
+
+            return {
+              ok: beforeLoad === 'GameOverScene' && g.getScene() === 'VictoryScene',
+              detail:
+                `Before load: ${beforeLoad}\n` +
+                `After load+retry: ${g.getScene()}\n` +
+                `main-quest: ${g.getQuestState()['main-quest']}`,
+            };
+          },
+        },
+      ];
+
+      function drawCards(items, states) {
+        resultsEl.innerHTML = '';
+        items.forEach((item, idx) => {
+          const row = document.createElement('article');
+          row.className = `card ${states[idx].status}`;
+          row.innerHTML =
+            `<div class="name">${item.name}</div>` +
+            `<div class="meta">${states[idx].status.toUpperCase()}${states[idx].ms != null ? ` · ${states[idx].ms}ms` : ''}</div>` +
+            `<div class="detail">${states[idx].detail || ''}</div>`;
+          resultsEl.appendChild(row);
+        });
+      }
+
+      function updateSummary(states) {
+        const total = states.length;
+        const pass = states.filter((x) => x.status === 'pass').length;
+        const fail = states.filter((x) => x.status === 'fail').length;
+        summaryValue.textContent = `${pass} / ${total} passed${fail ? ` - ${fail} failed` : ''}`;
+      }
+
+      async function runAll() {
+        runButton.disabled = true;
+        statusEl.textContent = 'Running...';
+        const states = cases.map(() => ({ status: 'running', detail: '', ms: null }));
+        drawCards(cases, states);
+        updateSummary(states);
+
+        for (let i = 0; i < cases.length; i += 1) {
+          const t0 = performance.now();
+          try {
+            const result = await cases[i].run();
+            states[i] = {
+              status: result.ok ? 'pass' : 'fail',
+              detail: (result.ok ? '[OK] ' : '[FAIL] ') + result.detail,
+              ms: Math.round(performance.now() - t0),
+            };
+          } catch (err) {
+            states[i] = {
+              status: 'fail',
+              detail: `[FAIL] ${String(err)}`,
+              ms: Math.round(performance.now() - t0),
+            };
+          }
+          drawCards(cases, states);
+          updateSummary(states);
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        const allPass = states.every((x) => x.status === 'pass');
+        statusEl.innerHTML = allPass
+          ? '<span class="ok">Complete storyline passed</span>'
+          : '<span class="bad">Storyline has failing beats</span>';
+        runButton.disabled = false;
+      }
+
+      runButton.addEventListener('click', runAll);
+
+      window.__storylineDemo = {
+        runAll,
+        getSummary: () => summaryValue.textContent,
+      };
+    </script>
+  </body>
+</html>

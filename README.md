@@ -8,6 +8,10 @@ This project is designed for fast feature iteration with strong testability:
 - browser-exposed test API (`window.__game`) for integration and e2e control
 - Playwright suites for visual, integration, and playthrough testing
 
+It now includes two browser-playable surfaces:
+- `/` uses `src/game/PlayableGame.ts` (direct canvas game loop)
+- `/playtest.html` and `/storyline-demo.html` use `src/runtime/GameRuntime.ts` (automation harnesses)
+
 ## Highlights
 
 - Deterministic RNG (`SeededRNG`) with stream support
@@ -75,6 +79,15 @@ npm run dev
 npm run build
 ```
 
+## Browser Demo Pages
+
+With `npm run dev` running on `http://localhost:5173`:
+
+- Main playable game (`/src/game`): `http://localhost:5173/`
+- Long storyline playtest on game canvas: `http://localhost:5173/game-storyline-demo.html`
+- Runtime live playtest dashboard: `http://localhost:5173/playtest.html`
+- Runtime storyline verification demo: `http://localhost:5173/storyline-demo.html`
+
 ## Test Commands
 
 - Unit tests: `npm test`
@@ -84,6 +97,10 @@ npm run build
 - Playwright visual: `npm run test:visual`
 - Playwright integration: `npm run test:integration`
 - Playwright e2e: `npm run test:e2e`
+
+Targeted browser storyline checks:
+- `/src/game` storyline demo e2e: `npm run test:e2e -- tests/e2e/game-storyline-demo.spec.ts`
+- Runtime storyline demo e2e: `npm run test:e2e -- tests/e2e/storyline-demo.spec.ts`
 
 ## AI Explorer
 
@@ -182,3 +199,4 @@ Implemented and tested:
 
 - This repo intentionally prioritizes deterministic behavior and test control over visual polish.
 - `window.__game` is disabled in production mode.
+- `src/game` and `src/runtime` both express the game domain; keep their storyline logic aligned when adding new narrative beats.

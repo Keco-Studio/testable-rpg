@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Storyline Demo</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 20% 0%, #273f5f, #0f1927 55%);
+        color: #d7e5f2;
+        font-family: "Courier New", monospace;
+        padding: 16px;
+      }
+      header { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+      h1 { margin: 0; font-size: 18px; color: #9bd5ff; }
+      #run { margin-left: auto; padding: 8px 14px; font: inherit; cursor: pointer; }
+      #status { font-size: 12px; color: #97b2c8; }
+      main { display: grid; grid-template-columns: 660px 1fr; gap: 12px; }
+      #stage {
+        border: 1px solid #38536b;
+        border-radius: 10px;
+        background: rgba(5, 12, 20, 0.7);
+        padding: 10px;
+      }
+      #game-canvas {
+        width: 640px;
+        height: 360px;
+        display: block;
+        border: 1px solid #355b75;
+      }
+      #hud {
+        margin-top: 8px;
+        background: rgba(8, 18, 29, 0.82);
+        border: 1px solid #2c465d;
+        border-radius: 8px;
+        padding: 8px;
+        min-height: 66px;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+      #summary {
+        border: 1px solid #2e4a61;
+        border-radius: 10px;
+        background: rgba(10, 21, 33, 0.68);
+        padding: 9px 10px;
+        margin-bottom: 8px;
+      }
+      #summary-value { color: #9bd5ff; font-weight: bold; }
+      #results { display: grid; grid-template-columns: 1fr; gap: 8px; }
+      .card {
+        border: 1px solid #2b4358;
+        border-left-width: 5px;
+        border-radius: 8px;
+        background: rgba(12, 22, 35, 0.85);
+        padding: 9px;
+      }
+      .card.running { border-left-color: #f4b740; }
+      .card.pass { border-left-color: #36c26d; }
+      .card.fail { border-left-color: #ef5350; }
+      .name { font-size: 13px; margin-bottom: 5px; }
+      .meta { font-size: 11px; color: #9cb9cf; margin-bottom: 4px; }
+      .detail { font-size: 11px; white-space: pre-wrap; color: #d1e3f3; min-height: 58px; }
+      @media (max-width: 1100px) {
+        main { grid-template-columns: 1fr; }
+        #game-canvas { width: 100%; height: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>IRONVEIL - /src/game Storyline Demo</h1>
+      <span id="status">Ready</span>
+      <button id="run">Run Storyline on Game Canvas</button>
+    </header>
+
+    <main>
+      <section id="stage">
+        <canvas id="game-canvas"></canvas>
+        <div id="hud">Booting game...</div>
+      </section>
+      <section>
+        <div id="summary">
+          <div id="summary-value">0 / 0 passed</div>
+          <div>Long-form /src/game storyline playtest (Act I, II branches, Act III).</div>
+        </div>
+        <div id="results"></div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { PlayableGame } from '/src/game/PlayableGame.ts';
+
+      const game = new PlayableGame(
+        document.getElementById('game-canvas'),
+        document.getElementById('hud'),
+      );
+      game.start();
+
+      const runBtn = document.getElementById('run');
+      const statusEl = document.getElementById('status');
+      const summaryEl = document.getElementById('summary-value');
+      const resultsEl = document.getElementById('results');
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      async function talkTo(npcId, choiceIndex) {
+        game.setPlayerNearNpc(npcId);
+        await wait(80);
+        game.interact();
+        await wait(80);
+        game.chooseDialog(choiceIndex);
+        await wait(80);
+      }
+
+      const scenarios = [
+        {
+          name: 'Act I - Prologue world state',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await wait(60);
+            const s = game.getState();
+            const ok =
+              s.scene === 'TownScene' &&
+              s.quests['main-quest'] === 'INACTIVE' &&
+              s.quests['slime-hunt'] === 'INACTIVE' &&
+              s.quests['faction-choice'] === 'ACTIVE';
+            return {
+              ok,
+              detail:
+                `Scene: ${s.scene}\n` +
+                `main-quest: ${s.quests['main-quest']}\n` +
+                `slime-hunt: ${s.quests['slime-hunt']}\n` +
+                `faction-choice: ${s.quests['faction-choice']}`,
+            };
+          },
+        },
+        {
+          name: 'Act I - Elder call to adventure',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('village-elder', 0);
+            const s = game.getState();
+            const ok = s.quests['main-quest'] === 'ACTIVE' && s.flags['elder-greeted'] === true;
+            return {
+              ok,
+              detail: `main-quest: ${s.quests['main-quest']}\nelder-greeted: ${String(s.flags['elder-greeted'])}`,
+            };
+          },
+        },
+        {
+          name: 'Act I - Hunter opens slime-hunt',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('hunter-roan', 0);
+            const s = game.getState();
+            const ok = s.quests['slime-hunt'] === 'ACTIVE' && s.flags['hunter-greeted'] === true;
+            return {
+              ok,
+              detail: `slime-hunt: ${s.quests['slime-hunt']}\nhunter-greeted: ${String(s.flags['hunter-greeted'])}`,
+            };
+          },
+        },
+        {
+          name: 'Act II (Guard) - Faction lock-in',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('faction-leader', 0);
+            const s = game.getState();
+            const ok =
+              s.faction === 'guard' &&
+              s.flags['joined-guard'] === true &&
+              s.flags['joined-mages'] === false &&
+              s.quests['faction-choice'] === 'COMPLETED';
+            return {
+              ok,
+              detail:
+                `faction: ${s.faction}\njoined-guard: ${String(s.flags['joined-guard'])}\n` +
+                `joined-mages: ${String(s.flags['joined-mages'])}`,
+            };
+          },
+        },
+        {
+          name: 'Act II (Guard) - Captain patrol mission',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('faction-leader', 0);
+            await talkTo('guard-captain', 0);
+            const s = game.getState();
+            const ok = s.quests['guard-patrol'] === 'ACTIVE' && s.flags['captain-met'] === true;
+            return {
+              ok,
+              detail: `guard-patrol: ${s.quests['guard-patrol']}\ncaptain-met: ${String(s.flags['captain-met'])}`,
+            };
+          },
+        },
+        {
+          name: 'Act II (Guard) - Two scout kills complete patrol',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('faction-leader', 0);
+            await talkTo('guard-captain', 0);
+            game.startBattleWith(['goblin-scout']); game.resolveBattle('win');
+            game.returnToTown();
+            game.startBattleWith(['goblin-scout']); game.resolveBattle('win');
+            const s = game.getState();
+            const ok = s.quests['guard-patrol'] === 'COMPLETED';
+            return {
+              ok,
+              detail: `guard-patrol: ${s.quests['guard-patrol']}\nplayer exp: ${s.player.exp}`,
+            };
+          },
+        },
+        {
+          name: 'Act II (Mages) - Faction lock-in and shard',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('faction-leader', 1);
+            await talkTo('arch-mage', 0);
+            const s = game.getState();
+            const hasShard = s.inventory.some((entry) => entry.itemId === 'veil-shard');
+            const ok =
+              s.faction === 'mages' &&
+              s.quests['veil-mending'] === 'COMPLETED' &&
+              s.flags['arch-mage-met'] === true &&
+              hasShard;
+            return {
+              ok,
+              detail:
+                `faction: ${s.faction}\nveil-mending: ${s.quests['veil-mending']}\n` +
+                `arch-mage-met: ${String(s.flags['arch-mage-met'])}\nveil-shard: ${hasShard ? 'yes' : 'no'}`,
+            };
+          },
+        },
+        {
+          name: 'Act II (Mages) - Guard captain rejects mages',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('faction-leader', 1);
+            game.setPlayerNearNpc('guard-captain');
+            await wait(70);
+            game.interact();
+            await wait(70);
+            const openState = game.getState();
+            const singleChoice = openState.dialog.choices.length === 1;
+            game.chooseDialog(0);
+            const s = game.getState();
+            const ok = singleChoice && s.quests['guard-patrol'] === 'INACTIVE';
+            return {
+              ok,
+              detail: `captain choices: ${openState.dialog.choices.length}\nguard-patrol: ${s.quests['guard-patrol']}`,
+            };
+          },
+        },
+        {
+          name: 'Act II - Slime cave requires three clears',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('hunter-roan', 0);
+            game.startBattleWith(['slime']); game.resolveBattle('win');
+            game.returnToTown();
+            const afterOne = game.getState().quests['slime-hunt'];
+            game.startBattleWith(['slime']); game.resolveBattle('win');
+            game.returnToTown();
+            const afterTwo = game.getState().quests['slime-hunt'];
+            game.startBattleWith(['slime']); game.resolveBattle('win');
+            const final = game.getState().quests['slime-hunt'];
+            const ok = afterOne === 'ACTIVE' && afterTwo === 'ACTIVE' && final === 'COMPLETED';
+            return {
+              ok,
+              detail: `after 1: ${afterOne}\nafter 2: ${afterTwo}\nafter 3: ${final}`,
+            };
+          },
+        },
+        {
+          name: 'Act III - Flee keeps hero alive',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('village-elder', 0);
+            game.startBattleWith(['goblin-boss']);
+            game.resolveBattle('flee');
+            const s = game.getState();
+            const ok = s.scene === 'TownScene' && s.quests['main-quest'] === 'ACTIVE';
+            return {
+              ok,
+              detail: `scene after flee: ${s.scene}\nmain-quest: ${s.quests['main-quest']}`,
+            };
+          },
+        },
+        {
+          name: 'Act III - Defeat route enters game over',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await talkTo('village-elder', 0);
+            game.startBattleWith(['goblin-boss']);
+            game.resolveBattle('lose');
+            const s = game.getState();
+            const ok = s.scene === 'GameOverScene';
+            return {
+              ok,
+              detail: `scene after loss: ${s.scene}`,
+            };
+          },
+        },
+        {
+          name: 'Long Run - Full campaign playthrough',
+          run: async () => {
+            game.reset();
+            game.enterTown();
+            await wait(60);
+            await talkTo('village-elder', 0);
+            await talkTo('hunter-roan', 0);
+            await talkTo('faction-leader', 0);
+            await talkTo('guard-captain', 0);
+
+            game.startBattleWith(['slime']); game.resolveBattle('win');
+            game.returnToTown();
+            game.startBattleWith(['slime']); game.resolveBattle('win');
+            game.returnToTown();
+            game.startBattleWith(['slime']); game.resolveBattle('win');
+            game.returnToTown();
+
+            game.startBattleWith(['goblin-scout']); game.resolveBattle('win');
+            game.returnToTown();
+            game.startBattleWith(['goblin-scout']); game.resolveBattle('win');
+            game.returnToTown();
+
+            game.startBattleWith(['goblin-boss']); game.resolveBattle('win');
+
+            const s = game.getState();
+            const ok =
+              s.scene === 'VictoryScene' &&
+              s.quests['main-quest'] === 'COMPLETED' &&
+              s.quests['slime-hunt'] === 'COMPLETED' &&
+              s.quests['guard-patrol'] === 'COMPLETED' &&
+              s.player.level >= 2;
+            return {
+              ok,
+              detail:
+                `scene: ${s.scene}\n` +
+                `main: ${s.quests['main-quest']} | slime: ${s.quests['slime-hunt']} | guard: ${s.quests['guard-patrol']}\n` +
+                `level: ${s.player.level} exp: ${s.player.exp}`,
+            };
+          },
+        },
+      ];
+
+      function renderRows(states) {
+        resultsEl.innerHTML = '';
+        states.forEach((state, i) => {
+          const row = document.createElement('article');
+          row.className = `card ${state.status}`;
+          row.innerHTML =
+            `<div class="name">${scenarios[i].name}</div>` +
+            `<div class="meta">${state.status.toUpperCase()}${state.ms == null ? '' : ` · ${state.ms}ms`}</div>` +
+            `<div class="detail">${state.detail || ''}</div>`;
+          resultsEl.appendChild(row);
+        });
+      }
+
+      function updateSummary(states) {
+        const pass = states.filter((x) => x.status === 'pass').length;
+        const total = states.length;
+        const fail = states.filter((x) => x.status === 'fail').length;
+        summaryEl.textContent = `${pass} / ${total} passed${fail ? ` - ${fail} failed` : ''}`;
+      }
+
+      async function runAll() {
+        runBtn.disabled = true;
+        statusEl.textContent = 'Running...';
+        const states = scenarios.map(() => ({ status: 'running', detail: '', ms: null }));
+        renderRows(states);
+        updateSummary(states);
+
+        for (let i = 0; i < scenarios.length; i += 1) {
+          const t0 = performance.now();
+          try {
+            const result = await scenarios[i].run();
+            states[i] = {
+              status: result.ok ? 'pass' : 'fail',
+              detail: `${result.ok ? '[OK]' : '[FAIL]'} ${result.detail}`,
+              ms: Math.round(performance.now() - t0),
+            };
+          } catch (err) {
+            states[i] = {
+              status: 'fail',
+              detail: `[FAIL] ${String(err)}`,
+              ms: Math.round(performance.now() - t0),
+            };
+          }
+          renderRows(states);
+          updateSummary(states);
+        }
+
+        const allPass = states.every((x) => x.status === 'pass');
+        statusEl.textContent = allPass ? 'Complete storyline passed' : 'Storyline has failures';
+        runBtn.disabled = false;
+      }
+
+      runBtn.addEventListener('click', runAll);
+      window.__gameStorylineDemo = {
+        runAll,
+        getSummary: () => summaryEl.textContent,
+      };
+    </script>
+  </body>
+</html>

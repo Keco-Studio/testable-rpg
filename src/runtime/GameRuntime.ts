@@ -217,6 +217,8 @@ const GROWTH_TABLE = toGrowthTable(growthData as unknown[]);
 const DIALOG_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiveId: string; amount: number }>> = {
   'npc-village-elder': [{ questId: 'main-quest', objectiveId: 'talk-elder', amount: 1 }],
   'npc-hunter': [{ questId: 'slime-hunt', objectiveId: 'talk-hunter', amount: 1 }],
+  'npc-guard-captain': [{ questId: 'guard-patrol', objectiveId: 'talk-captain', amount: 1 }],
+  'npc-arch-mage': [{ questId: 'veil-mending', objectiveId: 'talk-arch-mage', amount: 1 }],
 };
 
 const DIALOG_CHOICE_OBJECTIVE_PROGRESS: Record<
@@ -230,6 +232,7 @@ const DIALOG_CHOICE_OBJECTIVE_PROGRESS: Record<
 const ENEMY_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiveId: string; amount: number }>> = {
   'goblin-boss': [{ questId: 'main-quest', objectiveId: 'defeat-goblin-boss', amount: 1 }],
   slime: [{ questId: 'slime-hunt', objectiveId: 'defeat-slime', amount: 1 }],
+  'goblin-scout': [{ questId: 'guard-patrol', objectiveId: 'defeat-scout', amount: 1 }],
 };
 
 const SCENES = new Set(['TitleScene', 'TownScene', 'BattleScene', 'VictoryScene', 'GameOverScene']);

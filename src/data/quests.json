@@ -1,7 +1,7 @@
 [
   {
     "id": "main-quest",
-    "title": "First Steps",
+    "title": "The Veil Breaks",
     "objectives": [
       { "id": "talk-elder", "type": "TALK_TO_NPC", "required": 1 },
       { "id": "defeat-goblin-boss", "type": "DEFEAT_ENEMY", "required": 1 }
@@ -10,7 +10,7 @@
   },
   {
     "id": "slime-hunt",
-    "title": "Slime Hunt",
+    "title": "Clear the Eastern Cave",
     "objectives": [
       { "id": "talk-hunter", "type": "TALK_TO_NPC", "required": 1 },
       { "id": "defeat-slime", "type": "DEFEAT_ENEMY", "required": 3 }
@@ -19,7 +19,7 @@
   },
   {
     "id": "faction-choice",
-    "title": "Choose a Faction",
+    "title": "Choose Your Path",
     "objectives": [
       { "id": "join-guard", "type": "TALK_TO_NPC", "required": 1 },
       { "id": "join-mages", "type": "TALK_TO_NPC", "required": 1 }
@@ -27,6 +27,23 @@
     "paths": [
       { "id": "guard-path", "objectiveIds": ["join-guard"] },
       { "id": "mages-path", "objectiveIds": ["join-mages"] }
+    ],
+    "prerequisites": []
+  },
+  {
+    "id": "guard-patrol",
+    "title": "The Captain's Orders",
+    "objectives": [
+      { "id": "talk-captain", "type": "TALK_TO_NPC", "required": 1 },
+      { "id": "defeat-scout", "type": "DEFEAT_ENEMY", "required": 2 }
+    ],
+    "prerequisites": []
+  },
+  {
+    "id": "veil-mending",
+    "title": "The Broken Ward",
+    "objectives": [
+      { "id": "talk-arch-mage", "type": "TALK_TO_NPC", "required": 1 }
     ],
     "prerequisites": []
   }
