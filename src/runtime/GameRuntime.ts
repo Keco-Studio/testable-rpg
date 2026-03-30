@@ -7,6 +7,9 @@ import { SeededRNG } from '../engine/rng/SeededRNG';
 import itemsData from '../data/items.json';
 import questsData from '../data/quests.json';
 import dialogData from '../data/dialog.json';
+import enemiesData from '../data/enemies.json';
+import lootTablesData from '../data/loot-tables.json';
+import growthData from '../data/player-growth.json';
 import type {
   ActorSnapshot,
   BattleState,
@@ -117,9 +120,84 @@ function toDialogTrees(rows: unknown[]): DialogTree[] {
   return trees;
 }
 
+interface EnemyDef {
+  id: string;
+  lootTableId: string;
+  expReward: number;
+}
+
+function toEnemyCatalog(rows: unknown[]): Record<string, EnemyDef> {
+  const catalog: Record<string, EnemyDef> = {};
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const entry = row as Record<string, unknown>;
+    const id = typeof entry.id === 'string' ? entry.id : '';
+    if (!id) continue;
+    catalog[id] = {
+      id,
+      lootTableId: typeof entry.lootTableId === 'string' ? entry.lootTableId : '',
+      expReward: typeof entry.expReward === 'number' ? entry.expReward : 0,
+    };
+  }
+  return catalog;
+}
+
+interface LootDropDef {
+  itemId: string;
+  weight: number;
+}
+
+function toLootTableCatalog(rows: unknown[]): Record<string, LootDropDef[]> {
+  const catalog: Record<string, LootDropDef[]> = {};
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const entry = row as Record<string, unknown>;
+    const id = typeof entry.id === 'string' ? entry.id : '';
+    if (!id || !Array.isArray(entry.drops)) continue;
+    catalog[id] = entry.drops
+      .filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === 'object')
+      .map((drop) => ({
+        itemId: typeof drop.itemId === 'string' ? drop.itemId : '',
+        weight: typeof drop.weight === 'number' ? drop.weight : 0,
+      }))
+      .filter((drop) => drop.itemId.length > 0 && drop.weight > 0);
+  }
+  return catalog;
+}
+
+interface GrowthEntry {
+  level: number;
+  maxHp: number;
+  maxMp: number;
+  attack: number;
+  defense: number;
+  speed: number;
+  luck: number;
+}
+
+function toGrowthTable(rows: unknown[]): GrowthEntry[] {
+  const table = rows
+    .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === 'object')
+    .map((entry) => ({
+      level: typeof entry.level === 'number' ? entry.level : 1,
+      maxHp: typeof entry.maxHp === 'number' ? entry.maxHp : 30,
+      maxMp: typeof entry.maxMp === 'number' ? entry.maxMp : 10,
+      attack: typeof entry.attack === 'number' ? entry.attack : 8,
+      defense: typeof entry.defense === 'number' ? entry.defense : 5,
+      speed: typeof entry.speed === 'number' ? entry.speed : 6,
+      luck: typeof entry.luck === 'number' ? entry.luck : 1,
+    }))
+    .sort((a, b) => a.level - b.level);
+
+  return table;
+}
+
 const ITEM_CATALOG = toItemCatalog(itemsData as unknown[]);
 const QUESTS = toQuestDefinitions(questsData as unknown[]);
 const DIALOG_TREES = toDialogTrees(dialogData as unknown[]);
+const ENEMY_CATALOG = toEnemyCatalog(enemiesData as unknown[]);
+const LOOT_TABLES = toLootTableCatalog(lootTablesData as unknown[]);
+const GROWTH_TABLE = toGrowthTable(growthData as unknown[]);
 
 const DIALOG_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiveId: string; amount: number }>> = {
   'npc-village-elder': [{ questId: 'main-quest', objectiveId: 'talk-elder', amount: 1 }],
@@ -299,6 +377,73 @@ export class RuntimeGameState implements GameStateAdapter {
     }
   }
 
+  private expToReachLevel(level: number): number {
+    return level * 20;
+  }
+
+  private getGrowth(level: number): GrowthEntry | null {
+    return GROWTH_TABLE.find((entry) => entry.level === level) ?? null;
+  }
+
+  private applyLevelUps(): void {
+    const maxDefinedLevel = GROWTH_TABLE.at(-1)?.level ?? this.player.level;
+    while (this.player.level < maxDefinedLevel && this.player.exp >= this.expToReachLevel(this.player.level)) {
+      this.player.level += 1;
+      const growth = this.getGrowth(this.player.level);
+      if (!growth) continue;
+      this.player.maxHp = growth.maxHp;
+      this.player.maxMp = growth.maxMp;
+      this.player.attack = growth.attack;
+      this.player.defense = growth.defense;
+      this.player.speed = growth.speed;
+      this.player.luck = growth.luck;
+      this.player.hp = this.player.maxHp;
+      this.player.mp = this.player.maxMp;
+    }
+  }
+
+  private rollLoot(enemyId: string): { itemId: string; quantity: number } | null {
+    const enemy = ENEMY_CATALOG[enemyId];
+    if (!enemy || !enemy.lootTableId) return null;
+    const drops = LOOT_TABLES[enemy.lootTableId] ?? [];
+    if (drops.length === 0) return null;
+
+    const total = drops.reduce((sum, drop) => sum + drop.weight, 0);
+    if (total <= 0) return null;
+
+    let roll = this.rng.stream('loot').next() * total;
+    for (const drop of drops) {
+      roll -= drop.weight;
+      if (roll <= 0) {
+        return { itemId: drop.itemId, quantity: 1 };
+      }
+    }
+
+    const fallback = drops[drops.length - 1];
+    return { itemId: fallback.itemId, quantity: 1 };
+  }
+
+  private applyBattleRewards(enemyIds: readonly string[]): { exp: number; loot: Array<{ itemId: string; quantity: number }> } {
+    let exp = 0;
+    const loot: Array<{ itemId: string; quantity: number }> = [];
+
+    for (const enemyId of enemyIds) {
+      const enemy = ENEMY_CATALOG[enemyId];
+      exp += enemy?.expReward ?? 0;
+
+      const drop = this.rollLoot(enemyId);
+      if (!drop) continue;
+      const result = this.addItem(drop.itemId, drop.quantity);
+      if (result.ok) {
+        loot.push(drop);
+      }
+    }
+
+    this.player.exp += exp;
+    this.applyLevelUps();
+    return { exp, loot };
+  }
+
   private failActiveQuests(): void {
     for (const questId of this.questIds) {
       if (this.quests.getState(questId) === 'ACTIVE') {
@@ -356,7 +501,14 @@ export class RuntimeGameState implements GameStateAdapter {
   endBattle(outcome: 'win' | 'lose' | 'flee'): void {
     if (!this.battle) return;
     const defeatedEnemies = [...this.battle.enemies];
-    this.battle = { ...this.battle, active: false, outcome };
+    const rewards = outcome === 'win' ? this.applyBattleRewards(defeatedEnemies) : { exp: 0, loot: [] as Array<{ itemId: string; quantity: number }> };
+    this.battle = {
+      ...this.battle,
+      active: false,
+      outcome,
+      expGained: rewards.exp,
+      loot: rewards.loot,
+    };
     if (outcome === 'win') {
       this.progressObjectivesFromEnemies(defeatedEnemies);
     }

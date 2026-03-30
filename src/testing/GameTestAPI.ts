@@ -10,7 +10,13 @@ export interface ActorSnapshot { id: string; name: string; pos: Vector2; vel: Ve
 export interface PlayerSnapshot extends Vector2 { hp: number; maxHp: number; mp: number; maxMp: number; attack: number; defense: number; speed: number; luck: number; level: number; exp: number; }
 export interface InventoryEntry { itemId: string; quantity: number }
 export interface MapPosition { map: string; x: number; y: number }
-export interface BattleState { active: boolean; enemies: string[]; outcome: 'win' | 'lose' | 'flee' | null }
+export interface BattleState {
+  active: boolean;
+  enemies: string[];
+  outcome: 'win' | 'lose' | 'flee' | null;
+  expGained?: number;
+  loot?: InventoryEntry[];
+}
 export interface SaveData { scene: string; player: PlayerSnapshot; inventory: InventoryEntry[]; quests: Record<string, QuestState>; flags: Record<string, boolean>; mapPosition: MapPosition; questRuntime?: string }
 
 export type ScenarioStep =

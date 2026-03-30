@@ -113,4 +113,20 @@ describe('RuntimeGameState', () => {
     expect(runtime.getFlags()['joined-mages']).toBe(false);
     expect(runtime.getQuestState()['faction-choice']).toBe('COMPLETED');
   });
+
+  it('battle win grants exp, loot, and level progression', () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    const before = runtime.getPlayer();
+
+    runtime.startBattle(['goblin-boss']);
+    runtime.endBattle('win');
+
+    const after = runtime.getPlayer();
+    const battle = runtime.getBattleState();
+
+    expect(after.exp).toBeGreaterThan(before.exp);
+    expect(after.level).toBeGreaterThanOrEqual(before.level);
+    expect((battle?.expGained ?? 0) > 0).toBe(true);
+    expect((battle?.loot?.length ?? 0) > 0).toBe(true);
+  });
 });

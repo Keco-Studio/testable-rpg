@@ -28,8 +28,16 @@ test.describe('Integration flows', () => {
       window.__game!.endBattle('win');
     });
 
-    const scene = await page.evaluate(() => window.__game!.getScene());
-    expect(scene).toBe('VictoryScene');
+    const state = await page.evaluate(() => ({
+      scene: window.__game!.getScene(),
+      battle: window.__game!.getBattleState(),
+      player: window.__game!.getPlayer(),
+    }));
+
+    expect((state.battle?.expGained ?? 0) > 0).toBe(true);
+    expect((state.battle?.loot?.length ?? 0) > 0).toBe(true);
+    expect(state.player.exp).toBeGreaterThan(0);
+    expect(state.scene).toBe('VictoryScene');
   });
 
   test('side quest completes after hunter dialog and three slime wins', async ({ page }) => {
