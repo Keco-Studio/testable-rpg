@@ -7,23 +7,34 @@
     <style>
       body {
         margin: 0;
-        background: #1a1a2e;
+        background: radial-gradient(circle at 20% 10%, #243b55, #141e30 60%);
         color: #e0e0e0;
         font-family: monospace;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         min-height: 100vh;
+        padding: 20px;
       }
-      h1 { color: #a78bfa; }
-      p { color: #94a3b8; }
-      canvas { border: 2px solid #a78bfa; }
+      h1 { color: #7dd3fc; margin: 0 0 8px 0; }
+      p { color: #cbd5e1; margin: 0 0 12px 0; }
+      #game-canvas { border: 2px solid #7dd3fc; image-rendering: pixelated; }
+      #hud {
+        margin-top: 10px;
+        padding: 8px 10px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid #7dd3fc66;
+        border-radius: 6px;
+        min-width: 640px;
+      }
     </style>
   </head>
   <body>
     <h1>Testable RPG Game</h1>
-    <p>Engine initializing...</p>
+    <p>Minimal playable loop: Enter start, Arrows move, B battle, W/L/F outcome</p>
+    <canvas id="game-canvas"></canvas>
+    <div id="hud">Initializing...</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

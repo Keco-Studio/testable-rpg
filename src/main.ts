@@ -1,9 +1,13 @@
-import { SeededRNG } from './engine/rng/SeededRNG';
+import { PlayableGame } from './game/PlayableGame';
 
-const rng = new SeededRNG(42);
+const canvas = document.querySelector<HTMLCanvasElement>('#game-canvas');
+const hud = document.querySelector<HTMLElement>('#hud');
+if (!canvas || !hud) {
+  throw new Error('Game bootstrap failed: missing #game-canvas or #hud element.');
+}
 
-document.querySelector('p')!.textContent =
-  `SeededRNG(42) ready — nextFloat: ${rng.nextFloat().toFixed(8)}`;
+const game = new PlayableGame(canvas, hud);
+game.start();
 
 if (import.meta.env.MODE !== 'production') {
   const [{ installGameTestAPI }, { createRuntimeAdapter }] = await Promise.all([
