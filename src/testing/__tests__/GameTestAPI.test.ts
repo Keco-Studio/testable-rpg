@@ -159,4 +159,19 @@ describe('GameTestAPI scenario runner', () => {
     const result = await api.runScenario(scenario);
     expect(result.passed).toBe(true);
   });
+
+  it('supports deep equality assertions for objects and arrays', async () => {
+    const api = createGameTestAPI(createInMemoryAdapter());
+    const scenario: TestScenario = {
+      steps: [
+        { action: 'teleport', x: 9, y: 11, map: 'starting-village' },
+        { action: 'addItem', itemId: 'sword', quantity: 2 },
+        { assert: { path: 'map', equals: { map: 'starting-village', x: 9, y: 11 } } },
+        { assert: { path: 'inventory', equals: [{ itemId: 'sword', quantity: 2 }] } },
+      ],
+    };
+
+    const result = await api.runScenario(scenario);
+    expect(result.passed).toBe(true);
+  });
 });

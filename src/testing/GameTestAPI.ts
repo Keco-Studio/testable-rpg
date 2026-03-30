@@ -107,6 +107,32 @@ function getPathValue(target: unknown, path: string): unknown {
   }, target);
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  if (isObject(a) && isObject(b)) {
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+      if (!(key in b)) return false;
+      if (!deepEqual(a[key], b[key])) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
 async function execStep(adapter: GameStateAdapter, step: ScenarioStep): Promise<void> {
   if ('assert' in step) return;
   switch (step.action) {
@@ -137,7 +163,7 @@ export function createGameTestAPI(adapter: GameStateAdapter): GameTestAPI {
       try {
         if ('assert' in step) {
           const actual = getPathValue({ scene: adapter.getScene(), player: adapter.getPlayer(), inventory: adapter.getInventory(), quests: adapter.getQuestState(), flags: adapter.getFlags(), map: adapter.getMapPosition(), battle: adapter.getBattleState() }, step.assert.path);
-          if (actual !== step.assert.equals) { passed = false; log.push(`step ${index + 1}: assert failed (${step.assert.path})`); } else log.push(`step ${index + 1}: assert ok`);
+          if (!deepEqual(actual, step.assert.equals)) { passed = false; log.push(`step ${index + 1}: assert failed (${step.assert.path})`); } else log.push(`step ${index + 1}: assert ok`);
         } else {
           await execStep(adapter, step);
           log.push(`step ${index + 1}: ok`);
