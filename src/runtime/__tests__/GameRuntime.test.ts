@@ -70,6 +70,30 @@ describe('RuntimeGameState', () => {
     expect(runtime.getQuestState()['main-quest']).toBe('FAILED');
   });
 
+  it('save/load restores quest runtime progress exactly', async () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.triggerDialog('npc-hunter');
+    runtime.choose(0);
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+    runtime.saveGame(2);
+
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+    expect(runtime.getQuestState()['slime-hunt']).toBe('COMPLETED');
+
+    await runtime.loadGame(2);
+    expect(runtime.getQuestState()['slime-hunt']).toBe('ACTIVE');
+
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+    expect(runtime.getQuestState()['slime-hunt']).toBe('COMPLETED');
+  });
+
   it('faction dialog choice resolves branching quest path', () => {
     const runtime = new RuntimeGameState(new MemoryStorageAdapter());
     runtime.triggerDialog('npc-faction-leader');

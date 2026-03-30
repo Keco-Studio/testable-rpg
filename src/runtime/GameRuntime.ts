@@ -155,7 +155,7 @@ function clonePlayer(player: PlayerSnapshot): PlayerSnapshot {
 
 export class RuntimeGameState implements GameStateAdapter {
   private readonly inventory = new Inventory({ maxSlots: 24 });
-  private readonly quests = new QuestSystem();
+  private quests = new QuestSystem();
   private readonly dialog = new DialogSystem();
   private readonly saveSystem: SaveSystem;
   private readonly questIds = new Set<string>();
@@ -181,13 +181,18 @@ export class RuntimeGameState implements GameStateAdapter {
   private rng = new SeededRNG(42);
   private dialogState: { npcId: string; nodeId: string; text: string; choices: Array<{ index: number; text: string }> } | null = null;
 
-  constructor(storage: StorageAdapter = browserStorageAdapter()) {
-    this.saveSystem = new SaveSystem(storage);
-
+  private bootstrapQuests(): void {
+    this.quests = new QuestSystem();
+    this.questIds.clear();
     for (const quest of QUESTS) {
       this.quests.registerQuest(quest);
       this.questIds.add(quest.id);
     }
+  }
+
+  constructor(storage: StorageAdapter = browserStorageAdapter()) {
+    this.saveSystem = new SaveSystem(storage);
+    this.bootstrapQuests();
 
     for (const tree of DIALOG_TREES) {
       this.dialog.registerTree(tree);
@@ -390,6 +395,7 @@ export class RuntimeGameState implements GameStateAdapter {
       quests: this.getQuestState(),
       flags: this.getFlags(),
       mapPosition: this.getMapPosition(),
+      questRuntime: this.quests.serialize(),
     });
   }
 
@@ -408,11 +414,21 @@ export class RuntimeGameState implements GameStateAdapter {
       this.addItem(entry.itemId, entry.quantity);
     }
 
+    this.bootstrapQuests();
+    if (data.questRuntime) {
+      this.quests.deserialize(data.questRuntime);
+      return;
+    }
+
     for (const [questId, state] of Object.entries(data.quests)) {
       if (state === 'ACTIVE') this.activateQuest(questId);
       if (state === 'COMPLETED') {
         this.activateQuest(questId);
         this.completeQuest(questId);
+      }
+      if (state === 'FAILED') {
+        this.activateQuest(questId);
+        this.quests.fail(questId);
       }
     }
   }

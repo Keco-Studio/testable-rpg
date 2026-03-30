@@ -11,7 +11,7 @@ export interface PlayerSnapshot extends Vector2 { hp: number; maxHp: number; mp:
 export interface InventoryEntry { itemId: string; quantity: number }
 export interface MapPosition { map: string; x: number; y: number }
 export interface BattleState { active: boolean; enemies: string[]; outcome: 'win' | 'lose' | 'flee' | null }
-export interface SaveData { scene: string; player: PlayerSnapshot; inventory: InventoryEntry[]; quests: Record<string, QuestState>; flags: Record<string, boolean>; mapPosition: MapPosition }
+export interface SaveData { scene: string; player: PlayerSnapshot; inventory: InventoryEntry[]; quests: Record<string, QuestState>; flags: Record<string, boolean>; mapPosition: MapPosition; questRuntime?: string }
 
 export type ScenarioStep =
   | { action: 'setSeed'; value: number }
