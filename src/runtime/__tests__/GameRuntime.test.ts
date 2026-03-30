@@ -69,4 +69,14 @@ describe('RuntimeGameState', () => {
     expect(runtime.getScene()).toBe('GameOverScene');
     expect(runtime.getQuestState()['main-quest']).toBe('FAILED');
   });
+
+  it('faction dialog choice resolves branching quest path', () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.triggerDialog('npc-faction-leader');
+    runtime.choose(1);
+
+    expect(runtime.getFlags()['joined-guard']).toBeUndefined();
+    expect(runtime.getFlags()['joined-mages']).toBe(true);
+    expect(runtime.getQuestState()['faction-choice']).toBe('COMPLETED');
+  });
 });

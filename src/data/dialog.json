@@ -48,5 +48,43 @@
         "choices": []
       }
     ]
+  },
+  {
+    "npcId": "npc-faction-leader",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Will you join the guard or the mages?",
+        "choices": [
+          {
+            "text": "Join the guard",
+            "nextNodeId": "guard",
+            "actions": {
+              "activateQuest": "faction-choice",
+              "setFlag": { "key": "joined-guard", "value": true }
+            }
+          },
+          {
+            "text": "Join the mages",
+            "nextNodeId": "mages",
+            "actions": {
+              "activateQuest": "faction-choice",
+              "setFlag": { "key": "joined-mages", "value": true }
+            }
+          }
+        ]
+      },
+      {
+        "id": "guard",
+        "text": "The guard welcomes you.",
+        "choices": []
+      },
+      {
+        "id": "mages",
+        "text": "The mages welcome you.",
+        "choices": []
+      }
+    ]
   }
 ]

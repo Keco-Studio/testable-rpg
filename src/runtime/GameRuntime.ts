@@ -67,8 +67,20 @@ function toQuestDefinitions(rows: unknown[]): QuestDefinition[] {
           }))
       : [];
 
+    const paths = Array.isArray(entry.paths)
+      ? entry.paths
+          .filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === 'object')
+          .map((path) => ({
+            id: typeof path.id === 'string' ? path.id : 'path',
+            objectiveIds: Array.isArray(path.objectiveIds)
+              ? path.objectiveIds.filter((x): x is string => typeof x === 'string')
+              : [],
+          }))
+          .filter((path) => path.objectiveIds.length > 0)
+      : undefined;
+
     if (!id || objectives.length === 0) continue;
-    quests.push({ id, title, prerequisites, objectives });
+    quests.push({ id, title, prerequisites, objectives, paths });
   }
   return quests;
 }
@@ -112,6 +124,14 @@ const DIALOG_TREES = toDialogTrees(dialogData as unknown[]);
 const DIALOG_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiveId: string; amount: number }>> = {
   'npc-village-elder': [{ questId: 'main-quest', objectiveId: 'talk-elder', amount: 1 }],
   'npc-hunter': [{ questId: 'slime-hunt', objectiveId: 'talk-hunter', amount: 1 }],
+};
+
+const DIALOG_CHOICE_OBJECTIVE_PROGRESS: Record<
+  string,
+  Array<{ questId: string; objectiveId: string; amount: number }>
+> = {
+  'npc-faction-leader:0': [{ questId: 'faction-choice', objectiveId: 'join-guard', amount: 1 }],
+  'npc-faction-leader:1': [{ questId: 'faction-choice', objectiveId: 'join-mages', amount: 1 }],
 };
 
 const ENEMY_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiveId: string; amount: number }>> = {
@@ -250,6 +270,13 @@ export class RuntimeGameState implements GameStateAdapter {
     }
   }
 
+  private progressObjectivesFromNpcChoice(npcId: string, choiceIndex: number): void {
+    const entries = DIALOG_CHOICE_OBJECTIVE_PROGRESS[`${npcId}:${choiceIndex}`] ?? [];
+    for (const entry of entries) {
+      this.progressObjective(entry.questId, entry.objectiveId, entry.amount);
+    }
+  }
+
   private progressObjectivesFromEnemies(enemyIds: readonly string[]): void {
     for (const enemyId of enemyIds) {
       const entries = ENEMY_OBJECTIVE_PROGRESS[enemyId] ?? [];
@@ -303,6 +330,7 @@ export class RuntimeGameState implements GameStateAdapter {
     }
 
     this.progressObjectivesFromNpc(activeNpcId);
+    this.progressObjectivesFromNpcChoice(activeNpcId, index);
 
     this.dialogState = outcome.next;
   }

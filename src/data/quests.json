@@ -16,5 +16,18 @@
       { "id": "defeat-slime", "type": "DEFEAT_ENEMY", "required": 3 }
     ],
     "prerequisites": []
+  },
+  {
+    "id": "faction-choice",
+    "title": "Choose a Faction",
+    "objectives": [
+      { "id": "join-guard", "type": "TALK_TO_NPC", "required": 1 },
+      { "id": "join-mages", "type": "TALK_TO_NPC", "required": 1 }
+    ],
+    "paths": [
+      { "id": "guard-path", "objectiveIds": ["join-guard"] },
+      { "id": "mages-path", "objectiveIds": ["join-mages"] }
+    ],
+    "prerequisites": []
   }
 ]
