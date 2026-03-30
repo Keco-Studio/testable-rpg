@@ -10,10 +10,23 @@ export interface StatusEffect {
 export interface CombatStats {
   hp: number;
   maxHp: number;
+  mp?: number;
+  maxMp?: number;
   attack: number;
   defense: number;
   speed: number;
   luck: number;
+}
+
+export interface CombatSkill {
+  id: string;
+  name: string;
+  mpCost: number;
+  power: number;
+  applyStatus?: {
+    type: StatusEffectType;
+    duration: number;
+  };
 }
 
 export interface CombatActor {
@@ -26,11 +39,12 @@ export interface CombatActor {
 
 export interface TurnRecord {
   actorId: string;
-  action: 'attack' | 'skip';
+  action: 'attack' | 'skip' | 'skill' | 'flee';
   targetId?: string;
   damage?: number;
   isCritical?: boolean;
   statusApplied?: StatusEffectType;
+  skillId?: string;
 }
 
 export interface BattleResult {

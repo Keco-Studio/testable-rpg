@@ -4,6 +4,7 @@ import {
   type CombatActor,
   type CombatConfig,
   type CombatEventMap,
+  type CombatSkill,
   type CombatSide,
   type TurnRecord,
 } from './CombatTypes';
@@ -90,6 +91,31 @@ export function calcDamage(
   };
 }
 
+export function calcSkillDamage(
+  attacker: CombatActor,
+  defender: CombatActor,
+  skill: CombatSkill,
+  rng: SeededRNG,
+  config?: CombatConfig,
+): { damage: number; isCritical: boolean } {
+  const merged = mergeConfig(config);
+  const baseDamage = Math.max(1, attacker.stats.attack + skill.power - defender.stats.defense);
+  const critChance = Math.min(
+    merged.critChanceMax,
+    Math.max(0, merged.critChanceBase + attacker.stats.luck * merged.critLuckScale),
+  );
+  const isCritical = rng.stream('combat').next() < critChance;
+  return {
+    damage: isCritical ? baseDamage * 2 : baseDamage,
+    isCritical,
+  };
+}
+
+export function attemptFlee(actor: CombatActor, rng: SeededRNG): boolean {
+  const chance = Math.min(0.95, Math.max(0.1, 0.35 + actor.stats.speed * 0.02 + actor.stats.luck * 0.01));
+  return rng.stream('combat').next() < chance;
+}
+
 export class CombatSystem {
   private readonly listeners: { [K in EventName]: Set<EventHandler<K>> } = {
     'combat:damage': new Set(),
@@ -109,6 +135,61 @@ export class CombatSystem {
     for (const listener of this.listeners[eventName]) {
       listener(payload);
     }
+  }
+
+  useSkill(
+    attacker: CombatActor,
+    defender: CombatActor,
+    skill: CombatSkill,
+    rng: SeededRNG,
+    config?: CombatConfig,
+  ): { ok: true; value: TurnRecord } | { ok: false; error: Error } {
+    const currentMp = attacker.stats.mp ?? 0;
+    if (currentMp < skill.mpCost) {
+      return { ok: false, error: new Error(`Insufficient MP for skill ${skill.id}`) };
+    }
+
+    attacker.stats.mp = currentMp - skill.mpCost;
+    const { damage, isCritical } = calcSkillDamage(attacker, defender, skill, rng, config);
+    defender.stats.hp = Math.max(0, defender.stats.hp - damage);
+
+    if (skill.applyStatus) {
+      const existing = defender.statusEffects.find((effect) => effect.type === skill.applyStatus!.type);
+      if (existing) {
+        existing.duration = skill.applyStatus.duration;
+      } else {
+        defender.statusEffects.push({ ...skill.applyStatus });
+      }
+      this.emit('combat:statusApplied', {
+        actorId: defender.id,
+        effect: skill.applyStatus.type,
+        duration: skill.applyStatus.duration,
+      });
+    }
+
+    this.emit('combat:damage', {
+      attackerId: attacker.id,
+      defenderId: defender.id,
+      damage,
+      isCritical,
+    });
+
+    if (defender.stats.hp <= 0) {
+      this.emit('combat:actorDied', { actorId: defender.id });
+    }
+
+    return {
+      ok: true,
+      value: {
+        actorId: attacker.id,
+        action: 'skill',
+        targetId: defender.id,
+        damage,
+        isCritical,
+        statusApplied: skill.applyStatus?.type,
+        skillId: skill.id,
+      },
+    };
   }
 
   resolve(actors: readonly CombatActor[], rng: SeededRNG, config?: CombatConfig): BattleResult {

@@ -1,22 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
 import { SeededRNG } from '../../rng/SeededRNG';
-import { calcDamage, CombatSystem, sortBySpeed } from '../CombatSystem';
+import { attemptFlee, calcDamage, CombatSystem, sortBySpeed } from '../CombatSystem';
 import type { CombatActor } from '../CombatTypes';
 import { refreshStatusEffects } from '../StatusEffects';
 
 function createActor(overrides: Partial<CombatActor> & { id: string; side: 'player' | 'enemy' }): CombatActor {
+  const stats = overrides.stats ?? ({} as CombatActor['stats']);
   return {
     id: overrides.id,
     name: overrides.name ?? overrides.id,
     side: overrides.side,
     stats: {
-      hp: overrides.stats?.hp ?? 30,
-      maxHp: overrides.stats?.maxHp ?? 30,
-      attack: overrides.stats?.attack ?? 10,
-      defense: overrides.stats?.defense ?? 3,
-      speed: overrides.stats?.speed ?? 5,
-      luck: overrides.stats?.luck ?? 0,
+      hp: stats.hp ?? 30,
+      maxHp: stats.maxHp ?? 30,
+      mp: stats.mp ?? 0,
+      maxMp: stats.maxMp ?? 0,
+      attack: stats.attack ?? 10,
+      defense: stats.defense ?? 3,
+      speed: stats.speed ?? 5,
+      luck: stats.luck ?? 0,
     },
     statusEffects: overrides.statusEffects ?? [],
   };
@@ -166,5 +169,79 @@ describe('CombatSystem events', () => {
     expect(log).toContain('damage');
     expect(log).toContain('died');
     expect(log.at(-1)).toBe('end');
+  });
+});
+
+describe('CombatSystem flee + skills', () => {
+  it('attemptFlee succeeds for high speed/luck actors more reliably', () => {
+    const fast = createActor({
+      id: 'runner',
+      side: 'player',
+      stats: { hp: 10, maxHp: 10, attack: 1, defense: 1, speed: 20, luck: 10 } as CombatActor['stats'],
+    });
+    const slow = createActor({
+      id: 'slowpoke',
+      side: 'player',
+      stats: { hp: 10, maxHp: 10, attack: 1, defense: 1, speed: 0, luck: 0 } as CombatActor['stats'],
+    });
+
+    const runs = 200;
+    let fastWins = 0;
+    let slowWins = 0;
+    const rngFast = new SeededRNG(42);
+    const rngSlow = new SeededRNG(42);
+    for (let i = 0; i < runs; i++) {
+      if (attemptFlee(fast, rngFast)) fastWins += 1;
+      if (attemptFlee(slow, rngSlow)) slowWins += 1;
+    }
+
+    expect(fastWins).toBeGreaterThan(slowWins);
+  });
+
+  it('useSkill consumes mp, deals damage, and applies status', () => {
+    const system = new CombatSystem();
+    const attacker = createActor({
+      id: 'mage',
+      side: 'player',
+      stats: { hp: 20, maxHp: 20, mp: 10, maxMp: 10, attack: 6, defense: 2, speed: 5, luck: 0 } as CombatActor['stats'],
+    });
+    const defender = createActor({
+      id: 'enemy',
+      side: 'enemy',
+      stats: { hp: 30, maxHp: 30, attack: 4, defense: 2, speed: 4, luck: 0 } as CombatActor['stats'],
+    });
+
+    const result = system.useSkill(
+      attacker,
+      defender,
+      { id: 'burn-strike', name: 'Burn Strike', mpCost: 3, power: 4, applyStatus: { type: 'burn', duration: 2 } },
+      new SeededRNG(42),
+      { critChanceBase: 0, critLuckScale: 0, critChanceMax: 0 },
+    );
+
+    expect(result.ok).toBe(true);
+    expect(attacker.stats.mp).toBe(7);
+    expect(defender.stats.hp).toBe(22);
+    expect(defender.statusEffects).toContainEqual({ type: 'burn', duration: 2 });
+  });
+
+  it('useSkill fails when attacker lacks mp', () => {
+    const system = new CombatSystem();
+    const attacker = createActor({
+      id: 'mage',
+      side: 'player',
+      stats: { hp: 20, maxHp: 20, mp: 1, maxMp: 10, attack: 6, defense: 2, speed: 5, luck: 0 } as CombatActor['stats'],
+    });
+    const defender = createActor({ id: 'enemy', side: 'enemy' });
+
+    const result = system.useSkill(
+      attacker,
+      defender,
+      { id: 'big-spell', name: 'Big Spell', mpCost: 5, power: 10 },
+      new SeededRNG(42),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(attacker.stats.mp).toBe(1);
   });
 });
