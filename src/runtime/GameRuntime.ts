@@ -124,6 +124,12 @@ interface EnemyDef {
   id: string;
   lootTableId: string;
   expReward: number;
+  stats: {
+    hp: number;
+    attack: number;
+    defense: number;
+    speed: number;
+  };
 }
 
 function toEnemyCatalog(rows: unknown[]): Record<string, EnemyDef> {
@@ -137,6 +143,15 @@ function toEnemyCatalog(rows: unknown[]): Record<string, EnemyDef> {
       id,
       lootTableId: typeof entry.lootTableId === 'string' ? entry.lootTableId : '',
       expReward: typeof entry.expReward === 'number' ? entry.expReward : 0,
+      stats:
+        entry.stats && typeof entry.stats === 'object'
+          ? {
+              hp: typeof (entry.stats as Record<string, unknown>).hp === 'number' ? ((entry.stats as Record<string, unknown>).hp as number) : 1,
+              attack: typeof (entry.stats as Record<string, unknown>).attack === 'number' ? ((entry.stats as Record<string, unknown>).attack as number) : 1,
+              defense: typeof (entry.stats as Record<string, unknown>).defense === 'number' ? ((entry.stats as Record<string, unknown>).defense as number) : 0,
+              speed: typeof (entry.stats as Record<string, unknown>).speed === 'number' ? ((entry.stats as Record<string, unknown>).speed as number) : 1,
+            }
+          : { hp: 1, attack: 1, defense: 0, speed: 1 },
     };
   }
   return catalog;
@@ -258,6 +273,7 @@ export class RuntimeGameState implements GameStateAdapter {
   private battle: BattleState | null = null;
   private rng = new SeededRNG(42);
   private dialogState: { npcId: string; nodeId: string; text: string; choices: Array<{ index: number; text: string }> } | null = null;
+  private activeBattleEnemies: Array<{ id: string; hp: number; attack: number; defense: number; speed: number }> = [];
 
   private bootstrapQuests(): void {
     this.quests = new QuestSystem();
@@ -496,6 +512,16 @@ export class RuntimeGameState implements GameStateAdapter {
   startBattle(enemyIds: string[]): void {
     this.scene = 'BattleScene';
     this.battle = { active: true, enemies: [...enemyIds], outcome: null };
+    this.activeBattleEnemies = enemyIds.map((enemyId) => {
+      const enemy = ENEMY_CATALOG[enemyId];
+      return {
+        id: enemyId,
+        hp: enemy?.stats.hp ?? 1,
+        attack: enemy?.stats.attack ?? 1,
+        defense: enemy?.stats.defense ?? 0,
+        speed: enemy?.stats.speed ?? 1,
+      };
+    });
   }
 
   endBattle(outcome: 'win' | 'lose' | 'flee'): void {
@@ -514,14 +540,17 @@ export class RuntimeGameState implements GameStateAdapter {
     }
     if (outcome === 'win' && defeatedEnemies.includes('goblin-boss')) {
       this.scene = 'VictoryScene';
+      this.activeBattleEnemies = [];
       return;
     }
     if (outcome === 'lose') {
       this.failActiveQuests();
       this.scene = 'GameOverScene';
+      this.activeBattleEnemies = [];
       return;
     }
     this.scene = 'TownScene';
+    this.activeBattleEnemies = [];
   }
 
   setSeed(seed: number): void { this.rng = new SeededRNG(seed); }
@@ -529,6 +558,43 @@ export class RuntimeGameState implements GameStateAdapter {
   stepFrames(frames: number): void {
     const steps = Math.max(0, frames);
     for (let i = 0; i < steps; i++) this.rng.nextFloat();
+
+    if (!this.battle?.active) {
+      return;
+    }
+
+    const rounds = Math.max(1, Math.floor(steps / 60));
+    for (let i = 0; i < rounds; i++) {
+      if (!this.battle?.active) break;
+      this.resolveBattleRound();
+    }
+  }
+
+  private resolveBattleRound(): void {
+    const enemy = this.activeBattleEnemies.find((entry) => entry.hp > 0);
+    if (!enemy) {
+      this.endBattle('win');
+      return;
+    }
+
+    const playerDamage = Math.max(1, this.player.attack - enemy.defense);
+    enemy.hp = Math.max(0, enemy.hp - playerDamage);
+    if (enemy.hp <= 0 && this.activeBattleEnemies.every((entry) => entry.hp <= 0)) {
+      this.endBattle('win');
+      return;
+    }
+
+    const attacker = this.activeBattleEnemies.find((entry) => entry.hp > 0);
+    if (!attacker) {
+      this.endBattle('win');
+      return;
+    }
+
+    const enemyDamage = Math.max(1, attacker.attack - this.player.defense);
+    this.player.hp = Math.max(0, this.player.hp - enemyDamage);
+    if (this.player.hp <= 0) {
+      this.endBattle('lose');
+    }
   }
 
   skipDialog(): void { this.dialogState = null; }

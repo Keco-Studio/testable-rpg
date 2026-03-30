@@ -129,4 +129,24 @@ describe('RuntimeGameState', () => {
     expect((battle?.expGained ?? 0) > 0).toBe(true);
     expect((battle?.loot?.length ?? 0) > 0).toBe(true);
   });
+
+  it('stepFrames resolves active battle rounds to completion', () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.setPlayerStat('attack', 50);
+    runtime.startBattle(['slime']);
+    runtime.stepFrames(300);
+
+    expect(runtime.getScene()).toBe('TownScene');
+    expect(runtime.getBattleState()?.outcome).toBe('win');
+  });
+
+  it('stepFrames can cause player defeat in battle', () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.setPlayerStat('hp', 1);
+    runtime.startBattle(['goblin-boss']);
+    runtime.stepFrames(300);
+
+    expect(runtime.getScene()).toBe('GameOverScene');
+    expect(runtime.getBattleState()?.outcome).toBe('lose');
+  });
 });

@@ -123,4 +123,23 @@ test.describe('Integration flows', () => {
     expect(state.guard).toBe(true);
     expect(state.mages).toBe(false);
   });
+
+  test('stepFrames resolves battle and can trigger game over', async ({ page }) => {
+    await page.goto('http://localhost:5173?seed=42&testMode=true');
+    await page.waitForFunction(() => typeof window.__game !== 'undefined');
+
+    await page.evaluate(() => {
+      window.__game!.setPlayerStat('hp', 1);
+      window.__game!.startBattle(['goblin-boss']);
+      window.__game!.stepFrames(300);
+    });
+
+    const state = await page.evaluate(() => ({
+      scene: window.__game!.getScene(),
+      battle: window.__game!.getBattleState(),
+    }));
+
+    expect(state.scene).toBe('GameOverScene');
+    expect(state.battle?.outcome).toBe('lose');
+  });
 });
