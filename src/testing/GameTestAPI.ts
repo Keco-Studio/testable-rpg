@@ -21,10 +21,14 @@ export type ScenarioStep =
   | { action: 'activateQuest'; questId: string }
   | { action: 'completeQuest'; questId: string }
   | { action: 'setFlag'; key: string; value: boolean }
+  | { action: 'triggerDialog'; npcId: string }
+  | { action: 'choose'; index: number }
   | { action: 'stepFrames'; frames: number }
   | { action: 'changeScene'; sceneName: string }
   | { action: 'startBattle'; enemyIds: string[] }
   | { action: 'endBattle'; outcome: 'win' | 'lose' | 'flee' }
+  | { action: 'saveGame'; slot: 1 | 2 | 3 }
+  | { action: 'loadGame'; slot: 1 | 2 | 3 }
   | { assert: { path: string; equals: unknown } };
 
 export interface TestScenario { name?: string; steps: ScenarioStep[] }
@@ -114,10 +118,14 @@ async function execStep(adapter: GameStateAdapter, step: ScenarioStep): Promise<
     case 'activateQuest': adapter.activateQuest(step.questId); return;
     case 'completeQuest': adapter.completeQuest(step.questId); return;
     case 'setFlag': adapter.setFlag(step.key, step.value); return;
+    case 'triggerDialog': adapter.triggerDialog(step.npcId); return;
+    case 'choose': adapter.choose(step.index); return;
     case 'stepFrames': adapter.stepFrames(step.frames); return;
     case 'changeScene': { const res = await adapter.changeScene(step.sceneName); if (!res.ok) throw new Error(res.error); return; }
     case 'startBattle': adapter.startBattle(step.enemyIds); return;
     case 'endBattle': adapter.endBattle(step.outcome); return;
+    case 'saveGame': adapter.saveGame(step.slot); return;
+    case 'loadGame': await adapter.loadGame(step.slot); return;
   }
 }
 

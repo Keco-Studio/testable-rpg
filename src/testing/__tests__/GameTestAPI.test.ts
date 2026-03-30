@@ -141,4 +141,22 @@ describe('GameTestAPI scenario runner', () => {
     expect(results).toHaveLength(2);
     expect(results.every((entry) => entry.passed)).toBe(true);
   });
+
+  it('supports dialog and save/load actions in scenario steps', async () => {
+    const api = createGameTestAPI(createInMemoryAdapter());
+    const scenario: TestScenario = {
+      steps: [
+        { action: 'triggerDialog', npcId: 'npc-1' },
+        { action: 'choose', index: 1 },
+        { assert: { path: 'player.hp', equals: 30 } },
+        { action: 'saveGame', slot: 1 },
+        { action: 'setPlayerStat', stat: 'hp', value: 1 },
+        { action: 'loadGame', slot: 1 },
+        { assert: { path: 'player.hp', equals: 30 } },
+      ],
+    };
+
+    const result = await api.runScenario(scenario);
+    expect(result.passed).toBe(true);
+  });
 });
