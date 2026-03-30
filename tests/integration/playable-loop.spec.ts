@@ -10,6 +10,11 @@ test.describe('Playable loop', () => {
     await page.keyboard.press('Enter');
     await expect(hud).toContainText('Scene: TownScene');
 
+    await page.keyboard.press('e');
+    await expect(hud).toContainText('Dialog: open');
+    await page.keyboard.press('2');
+    await expect(hud).toContainText('Faction: mages');
+
     const before = await hud.textContent();
     await page.keyboard.down('ArrowRight');
     await page.waitForTimeout(250);

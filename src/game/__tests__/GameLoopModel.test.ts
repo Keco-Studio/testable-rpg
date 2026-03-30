@@ -43,4 +43,17 @@ describe('GameLoopModel', () => {
     model2.resolveBattle('lose');
     expect(model2.getState().scene).toBe('GameOverScene');
   });
+
+  it('opens dialog when interacting near npc and resolves faction choice', () => {
+    const model = new GameLoopModel();
+    model.enterTownFromTitle();
+
+    expect(model.getNearbyNpcId()).toBe('faction-leader');
+    model.interact();
+    expect(model.getState().dialog.open).toBe(true);
+
+    model.selectDialogChoice(1);
+    expect(model.getState().dialog.open).toBe(false);
+    expect(model.getState().faction).toBe('mages');
+  });
 });
