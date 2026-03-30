@@ -109,6 +109,16 @@ const ITEM_CATALOG = toItemCatalog(itemsData as unknown[]);
 const QUESTS = toQuestDefinitions(questsData as unknown[]);
 const DIALOG_TREES = toDialogTrees(dialogData as unknown[]);
 
+const DIALOG_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiveId: string; amount: number }>> = {
+  'npc-village-elder': [{ questId: 'main-quest', objectiveId: 'talk-elder', amount: 1 }],
+  'npc-hunter': [{ questId: 'slime-hunt', objectiveId: 'talk-hunter', amount: 1 }],
+};
+
+const ENEMY_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiveId: string; amount: number }>> = {
+  'goblin-boss': [{ questId: 'main-quest', objectiveId: 'defeat-goblin-boss', amount: 1 }],
+  slime: [{ questId: 'slime-hunt', objectiveId: 'defeat-slime', amount: 1 }],
+};
+
 const SCENES = new Set(['TitleScene', 'TownScene', 'BattleScene', 'VictoryScene', 'GameOverScene']);
 
 function browserStorageAdapter(): StorageAdapter {
@@ -229,6 +239,34 @@ export class RuntimeGameState implements GameStateAdapter {
   completeQuest(questId: string): void { this.quests.complete(questId); }
   setFlag(key: string, value: boolean): void { this.flags[key] = value; }
 
+  private progressObjective(questId: string, objectiveId: string, amount: number): void {
+    this.quests.progressObjective(questId, objectiveId, amount);
+  }
+
+  private progressObjectivesFromNpc(npcId: string): void {
+    const entries = DIALOG_OBJECTIVE_PROGRESS[npcId] ?? [];
+    for (const entry of entries) {
+      this.progressObjective(entry.questId, entry.objectiveId, entry.amount);
+    }
+  }
+
+  private progressObjectivesFromEnemies(enemyIds: readonly string[]): void {
+    for (const enemyId of enemyIds) {
+      const entries = ENEMY_OBJECTIVE_PROGRESS[enemyId] ?? [];
+      for (const entry of entries) {
+        this.progressObjective(entry.questId, entry.objectiveId, entry.amount);
+      }
+    }
+  }
+
+  private failActiveQuests(): void {
+    for (const questId of this.questIds) {
+      if (this.quests.getState(questId) === 'ACTIVE') {
+        this.quests.fail(questId);
+      }
+    }
+  }
+
   triggerDialog(npcId: string): void {
     const runtime = this.dialog.triggerDialog(npcId, {
       level: this.player.level,
@@ -264,9 +302,7 @@ export class RuntimeGameState implements GameStateAdapter {
       this.setFlag(flag.key, flag.value);
     }
 
-    if (activeNpcId === 'npc-village-elder') {
-      this.quests.progressObjective('main-quest', 'talk-elder', 1);
-    }
+    this.progressObjectivesFromNpc(activeNpcId);
 
     this.dialogState = outcome.next;
   }
@@ -280,14 +316,15 @@ export class RuntimeGameState implements GameStateAdapter {
     if (!this.battle) return;
     const defeatedEnemies = [...this.battle.enemies];
     this.battle = { ...this.battle, active: false, outcome };
-    if (outcome === 'win' && defeatedEnemies.includes('goblin-boss')) {
-      this.quests.progressObjective('main-quest', 'defeat-goblin-boss', 1);
+    if (outcome === 'win') {
+      this.progressObjectivesFromEnemies(defeatedEnemies);
     }
     if (outcome === 'win' && defeatedEnemies.includes('goblin-boss')) {
       this.scene = 'VictoryScene';
       return;
     }
     if (outcome === 'lose') {
+      this.failActiveQuests();
       this.scene = 'GameOverScene';
       return;
     }

@@ -7,5 +7,14 @@
       { "id": "defeat-goblin-boss", "type": "DEFEAT_ENEMY", "required": 1 }
     ],
     "prerequisites": []
+  },
+  {
+    "id": "slime-hunt",
+    "title": "Slime Hunt",
+    "objectives": [
+      { "id": "talk-hunter", "type": "TALK_TO_NPC", "required": 1 },
+      { "id": "defeat-slime", "type": "DEFEAT_ENEMY", "required": 3 }
+    ],
+    "prerequisites": []
   }
 ]

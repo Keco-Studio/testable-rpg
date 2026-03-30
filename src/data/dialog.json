@@ -23,5 +23,30 @@
         "choices": []
       }
     ]
+  },
+  {
+    "npcId": "npc-hunter",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Can you clear the slime cave?",
+        "choices": [
+          {
+            "text": "I will help",
+            "nextNodeId": "accepted",
+            "actions": {
+              "activateQuest": "slime-hunt",
+              "setFlag": { "key": "hunter-greeted", "value": true }
+            }
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "Defeat three slimes.",
+        "choices": []
+      }
+    ]
   }
 ]

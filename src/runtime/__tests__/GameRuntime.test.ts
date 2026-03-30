@@ -41,4 +41,32 @@ describe('RuntimeGameState', () => {
     expect(runtime.getScene()).toBe('VictoryScene');
     expect(runtime.getQuestState()['main-quest']).toBe('COMPLETED');
   });
+
+  it('hunter dialog + slime wins complete slime-hunt quest', () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.triggerDialog('npc-hunter');
+    runtime.choose(0);
+
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+    runtime.startBattle(['slime']);
+    runtime.endBattle('win');
+
+    expect(runtime.getFlags()['hunter-greeted']).toBe(true);
+    expect(runtime.getQuestState()['slime-hunt']).toBe('COMPLETED');
+  });
+
+  it('lose battle fails active quests', () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.triggerDialog('npc-village-elder');
+    runtime.choose(0);
+
+    runtime.startBattle(['slime']);
+    runtime.endBattle('lose');
+
+    expect(runtime.getScene()).toBe('GameOverScene');
+    expect(runtime.getQuestState()['main-quest']).toBe('FAILED');
+  });
 });
