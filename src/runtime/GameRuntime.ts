@@ -1,8 +1,12 @@
 import { Inventory, type Item } from '../engine/inventory/InventorySystem';
 import { QuestSystem, type QuestDefinition } from '../engine/quest/QuestSystem';
 import { DialogSystem } from '../engine/dialog/DialogSystem';
+import type { DialogTree } from '../engine/dialog/DialogSystem';
 import { SaveSystem, type StorageAdapter } from '../engine/save/SaveSystem';
 import { SeededRNG } from '../engine/rng/SeededRNG';
+import itemsData from '../data/items.json';
+import questsData from '../data/quests.json';
+import dialogData from '../data/dialog.json';
 import type {
   ActorSnapshot,
   BattleState,
@@ -14,20 +18,96 @@ import type {
   SaveData,
 } from '../testing/GameTestAPI';
 
-const ITEM_CATALOG: Record<string, Item> = {
-  'health-potion': { id: 'health-potion', name: 'Health Potion', stackable: true, maxStack: 10 },
-  sword: { id: 'sword', name: 'Iron Sword', stackable: false, maxStack: 1, equipSlot: 'weapon', statBonuses: { attack: 2 } },
-  shield: { id: 'shield', name: 'Wood Shield', stackable: false, maxStack: 1, equipSlot: 'offhand', statBonuses: { defense: 2 } },
-};
+function toItemCatalog(rows: unknown[]): Record<string, Item> {
+  const catalog: Record<string, Item> = {};
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const entry = row as Record<string, unknown>;
+    const id = typeof entry.id === 'string' ? entry.id : '';
+    if (!id) continue;
 
-const QUESTS: QuestDefinition[] = [
-  {
-    id: 'main-quest',
-    title: 'First Steps',
-    prerequisites: [],
-    objectives: [{ id: 'talk-elder', type: 'TALK_TO_NPC', required: 1 }],
-  },
-];
+    const statBonus =
+      entry.statBonus && typeof entry.statBonus === 'object' ? (entry.statBonus as Record<string, number>) : undefined;
+
+    catalog[id] = {
+      id,
+      name: typeof entry.name === 'string' ? entry.name : id,
+      stackable: Boolean(entry.stackable),
+      maxStack: typeof entry.maxStack === 'number' ? entry.maxStack : 1,
+      equipSlot: typeof entry.equipSlot === 'string' ? (entry.equipSlot as Item['equipSlot']) : undefined,
+      statBonuses: statBonus,
+    };
+  }
+  return catalog;
+}
+
+function toQuestDefinitions(rows: unknown[]): QuestDefinition[] {
+  const quests: QuestDefinition[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const entry = row as Record<string, unknown>;
+    const id = typeof entry.id === 'string' ? entry.id : '';
+    const title = typeof entry.title === 'string' ? entry.title : id;
+    const prerequisites = Array.isArray(entry.prerequisites)
+      ? entry.prerequisites.filter((x): x is string => typeof x === 'string')
+      : [];
+
+    const objectives = Array.isArray(entry.objectives)
+      ? entry.objectives
+          .filter((x): x is Record<string, unknown> => Boolean(x) && typeof x === 'object')
+          .map((objective) => ({
+            id: typeof objective.id === 'string' ? objective.id : 'objective',
+            type:
+              typeof objective.type === 'string' &&
+              ['TALK_TO_NPC', 'COLLECT_ITEM', 'DEFEAT_ENEMY', 'ENTER_ZONE'].includes(objective.type)
+                ? (objective.type as 'TALK_TO_NPC' | 'COLLECT_ITEM' | 'DEFEAT_ENEMY' | 'ENTER_ZONE')
+                : 'TALK_TO_NPC',
+            required: typeof objective.required === 'number' ? objective.required : 1,
+            optional: Boolean(objective.optional),
+          }))
+      : [];
+
+    if (!id || objectives.length === 0) continue;
+    quests.push({ id, title, prerequisites, objectives });
+  }
+  return quests;
+}
+
+function toDialogTrees(rows: unknown[]): DialogTree[] {
+  const trees: DialogTree[] = [];
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const entry = row as Record<string, unknown>;
+    if (typeof entry.npcId !== 'string' || typeof entry.rootNodeId !== 'string' || !Array.isArray(entry.nodes)) {
+      continue;
+    }
+
+    const nodes = entry.nodes
+      .filter((node): node is Record<string, unknown> => Boolean(node) && typeof node === 'object')
+      .map((node) => ({
+        id: typeof node.id === 'string' ? node.id : 'node',
+        text: typeof node.text === 'string' ? node.text : '',
+        choices: Array.isArray(node.choices)
+          ? node.choices
+              .filter((choice): choice is Record<string, unknown> => Boolean(choice) && typeof choice === 'object')
+              .map((choice) => ({
+                text: typeof choice.text === 'string' ? choice.text : '',
+                nextNodeId: typeof choice.nextNodeId === 'string' ? choice.nextNodeId : '',
+                actions: choice.actions as DialogTree['nodes'][number]['choices'][number]['actions'],
+                conditions: choice.conditions as DialogTree['nodes'][number]['choices'][number]['conditions'],
+              }))
+          : [],
+      }))
+      .filter((node) => node.id.length > 0);
+
+    trees.push({ npcId: entry.npcId, rootNodeId: entry.rootNodeId, nodes });
+  }
+  return trees;
+}
+
+const ITEM_CATALOG = toItemCatalog(itemsData as unknown[]);
+const QUESTS = toQuestDefinitions(questsData as unknown[]);
+const DIALOG_TREES = toDialogTrees(dialogData as unknown[]);
 
 const SCENES = new Set(['TitleScene', 'TownScene', 'BattleScene', 'VictoryScene', 'GameOverScene']);
 
@@ -79,24 +159,9 @@ export class RuntimeGameState implements GameStateAdapter {
       this.questIds.add(quest.id);
     }
 
-    this.dialog.registerTree({
-      npcId: 'npc-village-elder',
-      rootNodeId: 'root',
-      nodes: [
-        {
-          id: 'root',
-          text: 'Will you help the village?',
-          choices: [
-            {
-              text: 'Yes',
-              nextNodeId: 'accepted',
-              actions: { activateQuest: 'main-quest', setFlag: { key: 'elder-greeted', value: true } },
-            },
-          ],
-        },
-        { id: 'accepted', text: 'Return when done.', choices: [] },
-      ],
-    });
+    for (const tree of DIALOG_TREES) {
+      this.dialog.registerTree(tree);
+    }
   }
 
   getScene(): string { return this.scene; }
@@ -146,11 +211,11 @@ export class RuntimeGameState implements GameStateAdapter {
     this.player[stat] = value;
   }
 
-  addItem(itemId: string, quantity: number): Result<void, 'UNKNOWN_ITEM'> {
+  addItem(itemId: string, quantity: number): Result<void, 'UNKNOWN_ITEM' | 'INVENTORY_FULL'> {
     const item = ITEM_CATALOG[itemId];
     if (!item) return { ok: false, error: 'UNKNOWN_ITEM' };
     const result = this.inventory.addItem(item, quantity);
-    if (!result.ok && result.error === 'INVENTORY_FULL') return { ok: false, error: 'UNKNOWN_ITEM' };
+    if (!result.ok && result.error === 'INVENTORY_FULL') return { ok: false, error: 'INVENTORY_FULL' };
     return { ok: true, value: undefined };
   }
 
@@ -176,6 +241,7 @@ export class RuntimeGameState implements GameStateAdapter {
 
   choose(index: number): void {
     if (!this.dialogState) return;
+    const activeNpcId = this.dialogState.npcId;
     const outcome = this.dialog.choose(
       this.dialogState.npcId,
       this.dialogState.nodeId,
@@ -198,6 +264,10 @@ export class RuntimeGameState implements GameStateAdapter {
       this.setFlag(flag.key, flag.value);
     }
 
+    if (activeNpcId === 'npc-village-elder') {
+      this.quests.progressObjective('main-quest', 'talk-elder', 1);
+    }
+
     this.dialogState = outcome.next;
   }
 
@@ -208,8 +278,12 @@ export class RuntimeGameState implements GameStateAdapter {
 
   endBattle(outcome: 'win' | 'lose' | 'flee'): void {
     if (!this.battle) return;
+    const defeatedEnemies = [...this.battle.enemies];
     this.battle = { ...this.battle, active: false, outcome };
-    if (outcome === 'win' && this.battle.enemies.includes('goblin-boss')) {
+    if (outcome === 'win' && defeatedEnemies.includes('goblin-boss')) {
+      this.quests.progressObjective('main-quest', 'defeat-goblin-boss', 1);
+    }
+    if (outcome === 'win' && defeatedEnemies.includes('goblin-boss')) {
       this.scene = 'VictoryScene';
       return;
     }

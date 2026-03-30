@@ -3,6 +3,7 @@ import { SeededRNG } from '../engine/rng/SeededRNG';
 export type QuestState = 'INACTIVE' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
 export type Result<T, E extends string> = { ok: true; value: T } | { ok: false; error: E };
 export type ScenarioResult = { passed: boolean; log: string[] };
+export type AddItemError = 'UNKNOWN_ITEM' | 'INVENTORY_FULL';
 
 export interface Vector2 { x: number; y: number }
 export interface ActorSnapshot { id: string; name: string; pos: Vector2; vel: Vector2; hp: number }
@@ -46,7 +47,7 @@ export interface GameStateAdapter {
   getSaveSlot(slot: 1 | 2 | 3): SaveData | null;
   teleport(x: number, y: number, map?: string): Promise<void>;
   setPlayerStat(stat: keyof PlayerSnapshot, value: number): void;
-  addItem(itemId: string, quantity: number): Result<void, 'UNKNOWN_ITEM'>;
+  addItem(itemId: string, quantity: number): Result<void, AddItemError>;
   removeItem(itemId: string, quantity: number): Result<void, 'INSUFFICIENT_QUANTITY'>;
   activateQuest(questId: string): void;
   completeQuest(questId: string): void;
@@ -78,7 +79,7 @@ export interface GameTestAPI {
   teleport(x: number, y: number, map?: string): Promise<void>;
   setHP(value: number): void;
   setPlayerStat(stat: keyof PlayerSnapshot, value: number): void;
-  addItem(itemId: string, quantity?: number): Result<void, 'UNKNOWN_ITEM'>;
+  addItem(itemId: string, quantity?: number): Result<void, AddItemError>;
   removeItem(itemId: string, quantity?: number): Result<void, 'INSUFFICIENT_QUANTITY'>;
   triggerQuest(questId: string): void;
   activateQuest(questId: string): void;

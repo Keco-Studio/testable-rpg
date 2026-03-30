@@ -20,7 +20,7 @@ test('basic AI-controllable playthrough', async ({ page }) => {
     hasSword: (window.__game!.getInventory().find((i) => i.itemId === 'sword')?.quantity ?? 0) > 0,
   }));
 
-  expect(summary.quest).toBe('ACTIVE');
+  expect(summary.quest).toBe('COMPLETED');
   expect(summary.hasSword).toBe(true);
   expect(summary.scene).toBe('VictoryScene');
 });

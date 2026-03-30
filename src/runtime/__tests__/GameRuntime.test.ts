@@ -33,8 +33,12 @@ describe('RuntimeGameState', () => {
 
   it('boss win transitions to VictoryScene', () => {
     const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.triggerDialog('npc-village-elder');
+    runtime.choose(0);
     runtime.startBattle(['goblin-boss']);
     runtime.endBattle('win');
+
     expect(runtime.getScene()).toBe('VictoryScene');
+    expect(runtime.getQuestState()['main-quest']).toBe('COMPLETED');
   });
 });
