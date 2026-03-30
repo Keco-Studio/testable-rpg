@@ -10,3 +10,7 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+test-results/
+playwright-report/
+.opencode/
+reports/

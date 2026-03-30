@@ -1,0 +1,9 @@
+[
+  {
+    "id": "slash",
+    "name": "Slash",
+    "mpCost": 0,
+    "target": "single",
+    "formula": "attack - defense"
+  }
+]

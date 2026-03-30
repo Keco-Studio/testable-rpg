@@ -164,7 +164,7 @@ export class SeededRNG {
         return { ok: false, error: new Error('Invalid RNG state: missing required fields') };
       }
       // Restore root state
-      (this as { _state: number })._state = data.state >>> 0;
+      this._state = data.state >>> 0;
       // Restore streams
       this._streams.clear();
       for (const [name, state] of Object.entries(data.streams)) {

@@ -1,0 +1,32 @@
+[
+  {
+    "id": "health-potion",
+    "name": "Health Potion",
+    "type": "consumable",
+    "description": "Restores HP",
+    "effect": "heal",
+    "value": 20,
+    "stackable": true,
+    "maxStack": 10
+  },
+  {
+    "id": "sword",
+    "name": "Iron Sword",
+    "type": "weapon",
+    "description": "Simple iron blade",
+    "stackable": false,
+    "maxStack": 1,
+    "equipSlot": "weapon",
+    "statBonus": { "attack": 2 }
+  },
+  {
+    "id": "shield",
+    "name": "Wood Shield",
+    "type": "armor",
+    "description": "Light shield",
+    "stackable": false,
+    "maxStack": 1,
+    "equipSlot": "offhand",
+    "statBonus": { "defense": 2 }
+  }
+]

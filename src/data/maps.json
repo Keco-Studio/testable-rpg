@@ -1,0 +1,5 @@
+[
+  { "id": "starting-village", "file": "maps/starting-village.json" },
+  { "id": "forest-dungeon", "file": "maps/forest-dungeon.json" },
+  { "id": "final-castle", "file": "maps/final-castle.json" }
+]

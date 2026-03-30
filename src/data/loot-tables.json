@@ -1,0 +1,16 @@
+[
+  {
+    "id": "loot-basic",
+    "drops": [
+      { "itemId": "health-potion", "weight": 3 },
+      { "itemId": "sword", "weight": 1 }
+    ]
+  },
+  {
+    "id": "loot-boss",
+    "drops": [
+      { "itemId": "shield", "weight": 1 },
+      { "itemId": "health-potion", "weight": 2 }
+    ]
+  }
+]

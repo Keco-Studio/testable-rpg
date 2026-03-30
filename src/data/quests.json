@@ -1,0 +1,10 @@
+[
+  {
+    "id": "main-quest",
+    "title": "First Steps",
+    "objectives": [
+      { "id": "talk-elder", "type": "TALK_TO_NPC", "required": 1 }
+    ],
+    "prerequisites": []
+  }
+]

@@ -1,0 +1,27 @@
+[
+  {
+    "npcId": "npc-village-elder",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Will you help the village?",
+        "choices": [
+          {
+            "text": "Yes",
+            "nextNodeId": "accepted",
+            "actions": {
+              "activateQuest": "main-quest",
+              "setFlag": { "key": "elder-greeted", "value": true }
+            }
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "Return when done.",
+        "choices": []
+      }
+    ]
+  }
+]
