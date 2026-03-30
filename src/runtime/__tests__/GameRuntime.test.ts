@@ -75,8 +75,18 @@ describe('RuntimeGameState', () => {
     runtime.triggerDialog('npc-faction-leader');
     runtime.choose(1);
 
-    expect(runtime.getFlags()['joined-guard']).toBeUndefined();
+    expect(runtime.getFlags()['joined-guard']).toBe(false);
     expect(runtime.getFlags()['joined-mages']).toBe(true);
+    expect(runtime.getQuestState()['faction-choice']).toBe('COMPLETED');
+  });
+
+  it('guard branch sets exclusive faction flag', () => {
+    const runtime = new RuntimeGameState(new MemoryStorageAdapter());
+    runtime.triggerDialog('npc-faction-leader');
+    runtime.choose(0);
+
+    expect(runtime.getFlags()['joined-guard']).toBe(true);
+    expect(runtime.getFlags()['joined-mages']).toBe(false);
     expect(runtime.getQuestState()['faction-choice']).toBe('COMPLETED');
   });
 });

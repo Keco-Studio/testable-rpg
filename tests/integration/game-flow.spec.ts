@@ -92,7 +92,27 @@ test.describe('Integration flows', () => {
     }));
 
     expect(state.quest).toBe('COMPLETED');
-    expect(state.guard).toBeUndefined();
+    expect(state.guard).toBe(false);
     expect(state.mages).toBe(true);
+  });
+
+  test('guard branch sets exclusive guard flag', async ({ page }) => {
+    await page.goto('http://localhost:5173?seed=42&testMode=true');
+    await page.waitForFunction(() => typeof window.__game !== 'undefined');
+
+    await page.evaluate(() => {
+      window.__game!.triggerDialog('npc-faction-leader');
+      window.__game!.choose(0);
+    });
+
+    const state = await page.evaluate(() => ({
+      quest: window.__game!.getQuestLog()['faction-choice'],
+      guard: window.__game!.getFlags()['joined-guard'],
+      mages: window.__game!.getFlags()['joined-mages'],
+    }));
+
+    expect(state.quest).toBe('COMPLETED');
+    expect(state.guard).toBe(true);
+    expect(state.mages).toBe(false);
   });
 });

@@ -257,7 +257,15 @@ export class RuntimeGameState implements GameStateAdapter {
 
   activateQuest(questId: string): void { this.quests.activate(questId); }
   completeQuest(questId: string): void { this.quests.complete(questId); }
-  setFlag(key: string, value: boolean): void { this.flags[key] = value; }
+  setFlag(key: string, value: boolean): void {
+    if (key === 'joined-guard' && value) {
+      this.flags['joined-mages'] = false;
+    }
+    if (key === 'joined-mages' && value) {
+      this.flags['joined-guard'] = false;
+    }
+    this.flags[key] = value;
+  }
 
   private progressObjective(questId: string, objectiveId: string, amount: number): void {
     this.quests.progressObjective(questId, objectiveId, amount);
