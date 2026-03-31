@@ -1,3 +1,5 @@
+import { deriveActFlags, resolveFactionGate } from '../engine/storyline/StorylineEngine';
+
 export type SceneName = 'TitleScene' | 'TownScene' | 'BattleScene' | 'VictoryScene' | 'GameOverScene';
 
 type QuestState = 'INACTIVE' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
@@ -350,7 +352,7 @@ export class GameLoopModel {
     }
 
     if (npcId === 'guard-captain') {
-      if (this.state.faction !== 'guard') {
+      if (!resolveFactionGate(this.state.flags, 'guard')) {
         this.openDialog(npcId, 'I answer only to Iron Guard recruits.', [{ text: 'Understood', action: () => {} }]);
         return;
       }
@@ -372,7 +374,7 @@ export class GameLoopModel {
     }
 
     if (npcId === 'arch-mage') {
-      if (this.state.faction !== 'mages') {
+      if (!resolveFactionGate(this.state.flags, 'mages')) {
         this.openDialog(npcId, 'Only sworn mages may carry a Veil shard.', [{ text: 'I understand', action: () => {} }]);
         return;
       }
@@ -399,6 +401,11 @@ export class GameLoopModel {
     const selected = this.currentDialogChoices[index];
     if (selected) {
       selected.action();
+    }
+
+    const derived = deriveActFlags(this.state.flags);
+    for (const [k, v] of Object.entries(derived)) {
+      if (v !== undefined) this.state.flags[k] = v as boolean;
     }
 
     this.currentDialogChoices = [];
