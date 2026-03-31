@@ -3,7 +3,18 @@ import { deriveActFlags, resolveFactionGate } from '../engine/storyline/Storylin
 export type SceneName = 'TitleScene' | 'TownScene' | 'BattleScene' | 'VictoryScene' | 'GameOverScene';
 
 type QuestState = 'INACTIVE' | 'ACTIVE' | 'COMPLETED' | 'FAILED';
-type QuestId = 'main-quest' | 'slime-hunt' | 'faction-choice' | 'guard-patrol' | 'veil-mending';
+type QuestId =
+  | 'main-quest'
+  | 'slime-hunt'
+  | 'faction-choice'
+  | 'guard-patrol'
+  | 'veil-mending'
+  | 'guard-march'
+  | 'expose-the-traitor'
+  | 'decode-the-ruins'
+  | 'solens-sacrifice'
+  | 'defeat-the-lieutenant'
+  | 'final-confrontation';
 
 interface DialogChoice {
   text: string;
@@ -76,6 +87,12 @@ function questSeed(): Record<QuestId, QuestState> {
     'faction-choice': 'INACTIVE',
     'guard-patrol': 'INACTIVE',
     'veil-mending': 'INACTIVE',
+    'guard-march': 'INACTIVE',
+    'expose-the-traitor': 'INACTIVE',
+    'decode-the-ruins': 'INACTIVE',
+    'solens-sacrifice': 'INACTIVE',
+    'defeat-the-lieutenant': 'INACTIVE',
+    'final-confrontation': 'INACTIVE',
   };
 }
 
@@ -103,6 +120,8 @@ export class GameLoopModel {
       { id: 'faction-leader', x: 156, y: 96, width: 16, height: 16, title: 'Kael Thornback' },
       { id: 'guard-captain', x: 470, y: 104, width: 16, height: 16, title: 'Captain Vera' },
       { id: 'arch-mage', x: 530, y: 160, width: 16, height: 16, title: 'Arch-Mage Solen' },
+      { id: 'npc-sergeant-davan', x: 320, y: 80, width: 16, height: 16, title: 'Sergeant Davan' },
+      { id: 'npc-officer-crest', x: 360, y: 100, width: 16, height: 16, title: 'Officer Crest' },
     ],
     dialog: {
       open: false,
@@ -393,6 +412,55 @@ export class GameLoopModel {
           { text: 'Maybe later', action: () => {} },
         ],
       );
+    }
+
+    if (npcId === 'npc-sergeant-davan') {
+      if (!resolveFactionGate(this.state.flags, 'guard')) {
+        this.openDialog(npcId, 'I answer to the Iron Guard only.', [{ text: 'Understood', action: () => {} }]);
+        return;
+      }
+      this.openDialog(
+        npcId,
+        'Sergeant Davan, Iron Guard. Captain Vera sent you? Good. The garrison at north gate is stretched thin. We need your blade on the march.',
+        [
+          {
+            text: 'I am ready to march.',
+            action: () => {
+              this.state.flags['davan-met'] = true;
+              this.state.quests['guard-march'] = 'ACTIVE';
+            },
+          },
+          { text: 'Not yet', action: () => {} },
+        ],
+      );
+      return;
+    }
+
+    if (npcId === 'npc-officer-crest') {
+      if (!resolveFactionGate(this.state.flags, 'guard')) {
+        this.openDialog(npcId, 'Move along, civilian.', [{ text: 'Fine', action: () => {} }]);
+        return;
+      }
+      this.openDialog(
+        npcId,
+        'Officer Crest. I... did not expect visitors. Whatever you heard — it is not what it looks like.',
+        [
+          {
+            text: 'I am reporting this to the Captain.',
+            action: () => {
+              this.state.flags['guard-betrayal-exposed'] = true;
+              this.state.quests['expose-the-traitor'] = 'COMPLETED';
+            },
+          },
+          {
+            text: 'I saw nothing. Carry on.',
+            action: () => {
+              this.state.quests['expose-the-traitor'] = 'COMPLETED';
+            },
+          },
+        ],
+      );
+      return;
     }
   }
 
