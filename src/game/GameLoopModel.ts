@@ -1,4 +1,6 @@
 import { deriveActFlags, resolveFactionGate } from '../engine/storyline/StorylineEngine';
+import { CollisionSystem } from './map/CollisionSystem';
+import { loadVillageMap } from './map/villageMap';
 
 export type SceneName = 'TitleScene' | 'TownScene' | 'BattleScene' | 'VictoryScene' | 'GameOverScene';
 
@@ -146,6 +148,12 @@ export class GameLoopModel {
   private slimeKills = 0;
   private scoutKills = 0;
   private defeatedBoss = false;
+  private readonly collision: CollisionSystem;
+
+  constructor() {
+    const mapData = loadVillageMap();
+    this.collision = new CollisionSystem(mapData.zones);
+  }
 
   getState(): GameLoopState {
     return clone(this.state);
@@ -621,7 +629,17 @@ export class GameLoopModel {
     if (input.up) dy -= distance;
     if (input.down) dy += distance;
 
-    this.state.player.x = clamp(this.state.player.x + dx, 0, this.state.world.width - this.state.player.width);
-    this.state.player.y = clamp(this.state.player.y + dy, 0, this.state.world.height - this.state.player.height);
+    const desired = {
+      x: this.state.player.x + dx,
+      y: this.state.player.y + dy,
+    };
+    const resolved = this.collision.resolvePosition(
+      { x: this.state.player.x, y: this.state.player.y },
+      { width: this.state.player.width, height: this.state.player.height },
+      desired,
+    );
+
+    this.state.player.x = clamp(resolved.x, 0, this.state.world.width - this.state.player.width);
+    this.state.player.y = clamp(resolved.y, 0, this.state.world.height - this.state.player.height);
   }
 }
