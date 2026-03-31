@@ -122,6 +122,9 @@ export class GameLoopModel {
       { id: 'arch-mage', x: 530, y: 160, width: 16, height: 16, title: 'Arch-Mage Solen' },
       { id: 'npc-sergeant-davan', x: 320, y: 80, width: 16, height: 16, title: 'Sergeant Davan' },
       { id: 'npc-officer-crest', x: 360, y: 100, width: 16, height: 16, title: 'Officer Crest' },
+      { id: 'npc-scholar-lira', x: 420, y: 140, width: 16, height: 16, title: 'Scholar Lira' },
+      { id: 'npc-solen-sacrifice', x: 560, y: 180, width: 16, height: 16, title: 'Arch-Mage Solen' },
+      { id: 'npc-lieutenant-herald', x: 480, y: 80, width: 16, height: 16, title: 'Veil Ruins Herald' },
     ],
     dialog: {
       open: false,
@@ -243,6 +246,15 @@ export class GameLoopModel {
         this.grantExp(18);
         this.defeatedBoss = true;
         this.state.quests['main-quest'] = 'COMPLETED';
+      }
+      if (enemyId === 'goblin-lieutenant') {
+        this.grantExp(12);
+        this.state.flags['lieutenant-defeated'] = true;
+        this.state.quests['defeat-the-lieutenant'] = 'COMPLETED';
+        const derived = deriveActFlags(this.state.flags);
+        for (const [k, v] of Object.entries(derived)) {
+          if (v !== undefined) this.state.flags[k] = v as boolean;
+        }
       }
     }
     if (enemies.includes('goblin-boss')) {
@@ -457,6 +469,75 @@ export class GameLoopModel {
             action: () => {
               this.state.quests['expose-the-traitor'] = 'COMPLETED';
             },
+          },
+        ],
+      );
+      return;
+    }
+
+    if (npcId === 'npc-scholar-lira') {
+      if (!resolveFactionGate(this.state.flags, 'mages')) {
+        this.openDialog(npcId, 'I study the ancient ruins. Only mages may enter the archive.', [{ text: 'I understand', action: () => {} }]);
+        return;
+      }
+      this.openDialog(
+        npcId,
+        'I have deciphered the Veil runes. The ancient lattice can be restored at the stone circle.',
+        [
+          {
+            text: 'Tell me more',
+            action: () => {
+              this.state.flags['lira-met'] = true;
+              this.state.quests['decode-the-ruins'] = 'ACTIVE';
+            },
+          },
+          { text: 'Later', action: () => {} },
+        ],
+      );
+      return;
+    }
+
+    if (npcId === 'npc-solen-sacrifice') {
+      if (!resolveFactionGate(this.state.flags, 'mages')) {
+        this.openDialog(npcId, 'The Veil must be restored. This task is for mages only.', [{ text: 'I understand', action: () => {} }]);
+        return;
+      }
+      this.openDialog(
+        npcId,
+        'I am old, but the Veil needs me still. Will you help me complete the ritual?',
+        [
+          {
+            text: 'I will help you',
+            action: () => {
+              this.state.flags['solen-met'] = true;
+              this.state.quests['solens-sacrifice'] = 'ACTIVE';
+            },
+          },
+          { text: 'Not yet', action: () => {} },
+        ],
+      );
+      return;
+    }
+
+    if (npcId === 'npc-lieutenant-herald') {
+      if (!this.state.flags['act-complete-1']) {
+        this.openDialog(npcId, 'You should speak with the faction leaders first. The Lieutenant can wait.', [{ text: 'Understood', action: () => {} }]);
+        return;
+      }
+      this.openDialog(
+        npcId,
+        "Gorak's Lieutenant guards the Veil Ruins. He knows you are coming. Both factions must move now — together or not at all.",
+        [
+          {
+            text: 'We face him now.',
+            action: () => {
+              this.state.flags['lieutenant-briefed'] = true;
+              this.state.quests['defeat-the-lieutenant'] = 'ACTIVE';
+            },
+          },
+          {
+            text: 'We are not ready yet.',
+            action: () => {},
           },
         ],
       );

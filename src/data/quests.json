@@ -78,5 +78,13 @@
     "objectives": [
       { "id": "consult-solen-act2", "type": "TALK_TO_NPC", "required": 1 }
     ]
+  },
+  {
+    "id": "defeat-the-lieutenant",
+    "title": "Defeat the Lieutenant",
+    "prerequisites": [],
+    "objectives": [
+      { "id": "defeat-lieutenant", "type": "DEFEAT_ENEMY", "required": 1 }
+    ]
   }
 ]

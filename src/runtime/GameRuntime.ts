@@ -238,6 +238,7 @@ const ENEMY_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objectiv
   'goblin-boss': [{ questId: 'main-quest', objectiveId: 'defeat-goblin-boss', amount: 1 }],
   slime: [{ questId: 'slime-hunt', objectiveId: 'defeat-slime', amount: 1 }],
   'goblin-scout': [{ questId: 'guard-patrol', objectiveId: 'defeat-scout', amount: 1 }],
+  'goblin-lieutenant': [{ questId: 'defeat-the-lieutenant', objectiveId: 'defeat-lieutenant', amount: 1 }],
 };
 
 const SCENES = new Set(['TitleScene', 'TownScene', 'BattleScene', 'VictoryScene', 'GameOverScene']);
@@ -544,6 +545,13 @@ export class RuntimeGameState implements GameStateAdapter {
     };
     if (outcome === 'win') {
       this.progressObjectivesFromEnemies(defeatedEnemies);
+    }
+    if (outcome === 'win' && defeatedEnemies.includes('goblin-lieutenant')) {
+      this.setFlag('lieutenant-defeated', true);
+      const derived = deriveActFlags(this.flags);
+      for (const [k, v] of Object.entries(derived)) {
+        if (v !== undefined) this.flags[k] = v;
+      }
     }
     if (outcome === 'win' && defeatedEnemies.includes('goblin-boss')) {
       this.scene = 'VictoryScene';

@@ -301,5 +301,40 @@
         "choices": []
       }
     ]
+  },
+  {
+    "npcId": "npc-lieutenant-herald",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Gorak's Lieutenant guards the Veil Ruins. He knows you are coming. Both factions must move now — together or not at all.",
+        "choices": [
+          {
+            "text": "We face him now.",
+            "nextNodeId": "accepted",
+            "conditions": { "flag": { "key": "act-complete-1", "value": true } },
+            "actions": {
+              "activateQuest": "defeat-the-lieutenant",
+              "setFlag": { "key": "lieutenant-briefed", "value": true }
+            }
+          },
+          {
+            "text": "We are not ready yet.",
+            "nextNodeId": "waiting"
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "Then we march. The ruins are ahead. Stay sharp.",
+        "choices": []
+      },
+      {
+        "id": "waiting",
+        "text": "When you are ready. He will not wait forever.",
+        "choices": []
+      }
+    ]
   }
 ]

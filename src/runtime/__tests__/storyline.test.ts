@@ -68,9 +68,9 @@ describe('Act I — The world before the player acts', () => {
     expect(flags['elder-greeted']).toBeFalsy();
   });
 
-  it('nine quests exist in the quest log — the story has scope', () => {
+  it('ten quests exist in the quest log — the story has scope', () => {
     const game = rt();
-    expect(Object.keys(game.getQuestState())).toHaveLength(9);
+    expect(Object.keys(game.getQuestState())).toHaveLength(10);
   });
 });
 
@@ -379,6 +379,123 @@ describe('Act II (Guard) — Full guard path arc', () => {
 });
 
 // ---------------------------------------------------------------------------
+// ACT II — Guard Path: Sergeant Davan & Officer Crest
+// ---------------------------------------------------------------------------
+
+describe('Act II (Guard) — Sergeant Davan issues march orders', () => {
+  it('guard player can accept the march from Sergeant Davan', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0); // join guard
+
+    game.triggerDialog('npc-sergeant-davan');
+    game.choose(0); // accept march
+
+    expect(game.getQuestState()['guard-march']).toBe('COMPLETED');
+    expect(game.getFlags()['davan-met']).toBe(true);
+  });
+
+  it("Davan mentions the garrison and march in root dialog", () => {
+    const game = rt();
+    game.triggerDialog('npc-sergeant-davan');
+    const text = game.getDialogState()?.text as string;
+    expect(text).toMatch(/garrison/i);
+    expect(text).toMatch(/march/i);
+  });
+
+  it('mages player is rejected by Davan — only one choice available', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1); // join mages
+
+    game.triggerDialog('npc-sergeant-davan');
+    const choices = game.getDialogState()?.choices as Array<{ index: number; text: string }>;
+    expect(choices).toHaveLength(1);
+    expect(choices[0].text).toMatch(/Mages/i);
+
+    game.choose(0); // rejection
+    expect(game.getQuestState()['guard-march']).toBe('INACTIVE');
+  });
+
+  it("Davan warns about Officer Crest's strange behavior after accepting", () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0);
+    game.triggerDialog('npc-sergeant-davan');
+    game.choose(0); // accept
+    const text = game.getDialogState()?.text as string;
+    expect(text).toMatch(/Crest/i);
+    expect(text).toMatch(/acting strange/i);
+  });
+
+  it('davan-met flag is NOT set when a mages player is rejected', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1);
+    game.triggerDialog('npc-sergeant-davan');
+    game.choose(0); // rejection
+    expect(game.getFlags()['davan-met']).toBeFalsy();
+  });
+});
+
+describe('Act II (Guard) — Officer Crest confrontation', () => {
+  it('guard player can expose Crest as a traitor after completing guard-march', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0); // join guard - completes faction-choice
+    game.triggerDialog('npc-sergeant-davan');
+    game.choose(0); // accept march - completes guard-march
+
+    game.triggerDialog('npc-officer-crest');
+    game.choose(0); // expose
+
+    expect(game.getQuestState()['expose-the-traitor']).toBe('COMPLETED');
+    expect(game.getFlags()['guard-betrayal-exposed']).toBe(true);
+  });
+
+  it('guard player can cover up for Crest after completing guard-march', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0); // join guard - completes faction-choice
+    game.triggerDialog('npc-sergeant-davan');
+    game.choose(0); // accept march - completes guard-march
+
+    game.triggerDialog('npc-officer-crest');
+    game.choose(1); // cover up
+
+    expect(game.getQuestState()['expose-the-traitor']).toBe('COMPLETED');
+    expect(game.getFlags()['guard-betrayal-exposed']).toBeFalsy();
+  });
+
+  it('Crest has exactly two choices for guard players after guard-march', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0);
+    game.triggerDialog('npc-sergeant-davan');
+    game.choose(0);
+    game.triggerDialog('npc-officer-crest');
+    const choices = game.getDialogState()?.choices as Array<{ index: number; text: string }>;
+    expect(choices).toHaveLength(2);
+  });
+
+  it('mages player sees no meaningful choices from Crest', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1); // join mages
+    game.triggerDialog('npc-officer-crest');
+    const choices = game.getDialogState()?.choices as Array<{ index: number; text: string }>;
+    expect(choices).toHaveLength(0);
+  });
+
+  it("Crest's dialog mentions something suspicious", () => {
+    const game = rt();
+    game.triggerDialog('npc-officer-crest');
+    const text = game.getDialogState()?.text as string;
+    expect(text).toMatch(/not what it looks like/i);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // ACT II — The Mages Path
 // ---------------------------------------------------------------------------
 
@@ -462,6 +579,127 @@ describe('Act II (Mages) — Arch-Mage Solen extends a hand', () => {
     game.triggerDialog('npc-arch-mage');
     game.choose(0); // only rejection available (no joined-mages)
     expect(game.getQuestState()['veil-mending']).toBe('INACTIVE');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ACT II — Mages Path: Scholar Lira & Solen's Sacrifice
+// ---------------------------------------------------------------------------
+
+describe('Act II (Mages) — Scholar Lira reveals the lattice', () => {
+  it('mages player can learn about the Veil lattice from Lira', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1); // join mages
+
+    game.triggerDialog('npc-scholar-lira');
+    game.choose(0); // accept
+
+    expect(game.getQuestState()['decode-the-ruins']).toBe('COMPLETED');
+    expect(game.getFlags()['lira-met']).toBe(true);
+  });
+
+  it("Lira mentions the Veil lattice and reactivation in her dialog", () => {
+    const game = rt();
+    game.triggerDialog('npc-scholar-lira');
+    const text = game.getDialogState()?.text as string;
+    expect(text).toMatch(/lattice/i);
+    expect(text).toMatch(/reactivat/i);
+  });
+
+  it('guard player is rejected by Lira — only one choice available', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0); // join guard
+
+    game.triggerDialog('npc-scholar-lira');
+    const choices = game.getDialogState()?.choices as Array<{ index: number; text: string }>;
+    expect(choices).toHaveLength(1);
+    expect(choices[0].text).toMatch(/Guard/i);
+
+    game.choose(0); // rejection
+    expect(game.getQuestState()['decode-the-ruins']).toBe('INACTIVE');
+  });
+
+  it('lira-met flag is NOT set when a guard player is rejected', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0);
+    game.triggerDialog('npc-scholar-lira');
+    game.choose(0); // rejection
+    expect(game.getFlags()['lira-met']).toBeFalsy();
+  });
+
+  it('Lira tells mages to warn Solen about the cost in her accepted node', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1);
+    game.triggerDialog('npc-scholar-lira');
+    game.choose(0); // accept - moves to next node
+    const text = game.getDialogState()?.text as string;
+    expect(text).toMatch(/Solen/i);
+    expect(text).toMatch(/cost/i);
+  });
+});
+
+describe('Act II (Mages) — Solen\'s sacrifice choice', () => {
+  it('mages player can warn Solen about the cost after decoding ruins', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1); // join mages - completes faction-choice
+    game.triggerDialog('npc-scholar-lira');
+    game.choose(0); // decode ruins - completes decode-the-ruins
+
+    game.triggerDialog('npc-solen-sacrifice');
+    game.choose(0); // warn
+
+    expect(game.getFlags()['solen-warned']).toBe(true);
+  });
+
+  it('mages player can let Solen proceed with the sacrifice', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1); // join mages - completes faction-choice
+    game.triggerDialog('npc-scholar-lira');
+    game.choose(0); // decode ruins - completes decode-the-ruins
+
+    game.triggerDialog('npc-solen-sacrifice');
+    game.choose(1); // let him proceed
+
+    expect(game.getFlags()['solen-warned']).toBeFalsy();
+  });
+
+  it('Solen has exactly two choices for mages players', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1);
+    game.triggerDialog('npc-scholar-lira');
+    game.choose(0);
+
+    game.triggerDialog('npc-solen-sacrifice');
+    const choices = game.getDialogState()?.choices as Array<{ index: number; text: string }>;
+    expect(choices).toHaveLength(2);
+  });
+
+  it('Solen acknowledges what the choice entails', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(1);
+    game.triggerDialog('npc-scholar-lira');
+    game.choose(0);
+
+    game.triggerDialog('npc-solen-sacrifice');
+    const text = game.getDialogState()?.text as string;
+    expect(text).toMatch(/I have read/i);
+  });
+
+  it('guard player sees no choices from Solen', () => {
+    const game = rt();
+    game.triggerDialog('npc-faction-leader');
+    game.choose(0); // join guard
+    game.triggerDialog('npc-solen-sacrifice');
+    const choices = game.getDialogState()?.choices as Array<{ index: number; text: string }>;
+    expect(choices).toHaveLength(0);
   });
 });
 
@@ -911,7 +1149,7 @@ describe('Narrative coherence — world state makes story sense', () => {
     expect(q['guard-patrol']).toBe('INACTIVE');
   });
 
-  it('the seven-quest world has no quest that can block another from completing', () => {
+  it('the ten-quest world has no quest that can block another from completing', () => {
     // No quest has prerequisites that would create a deadlock.
     // Verify: all quests can independently reach COMPLETED.
     const game = rt();
@@ -943,6 +1181,9 @@ describe('Narrative coherence — world state makes story sense', () => {
 
     game.activateQuest('solens-sacrifice');
     game.completeQuest('solens-sacrifice');
+
+    game.activateQuest('defeat-the-lieutenant');
+    game.completeQuest('defeat-the-lieutenant');
 
     const q = game.getQuestState();
     expect(Object.values(q).every(s => s === 'COMPLETED')).toBe(true);
