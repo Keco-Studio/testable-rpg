@@ -1,3 +1,4 @@
+import { deriveActFlags, resolveFactionExclusivity } from '../engine/storyline/StorylineEngine';
 import { Inventory, type Item } from '../engine/inventory/InventorySystem';
 import { QuestSystem, type QuestDefinition } from '../engine/quest/QuestSystem';
 import { DialogSystem } from '../engine/dialog/DialogSystem';
@@ -360,13 +361,7 @@ export class RuntimeGameState implements GameStateAdapter {
   activateQuest(questId: string): void { this.quests.activate(questId); }
   completeQuest(questId: string): void { this.quests.complete(questId); }
   setFlag(key: string, value: boolean): void {
-    if (key === 'joined-guard' && value) {
-      this.flags['joined-mages'] = false;
-    }
-    if (key === 'joined-mages' && value) {
-      this.flags['joined-guard'] = false;
-    }
-    this.flags[key] = value;
+    this.flags = resolveFactionExclusivity(this.flags, key, value);
   }
 
   private progressObjective(questId: string, objectiveId: string, amount: number): void {
@@ -508,6 +503,11 @@ export class RuntimeGameState implements GameStateAdapter {
 
     this.progressObjectivesFromNpc(activeNpcId);
     this.progressObjectivesFromNpcChoice(activeNpcId, index);
+
+    const derived = deriveActFlags(this.flags);
+    for (const [k, v] of Object.entries(derived)) {
+      if (v !== undefined) this.flags[k] = v;
+    }
 
     this.dialogState = outcome.next;
   }
