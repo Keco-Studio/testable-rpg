@@ -86,5 +86,13 @@
     "objectives": [
       { "id": "defeat-lieutenant", "type": "DEFEAT_ENEMY", "required": 1 }
     ]
+  },
+  {
+    "id": "final-confrontation",
+    "title": "The Final Confrontation",
+    "prerequisites": ["defeat-the-lieutenant"],
+    "objectives": [
+      { "id": "defeat-gorak", "type": "DEFEAT_ENEMY", "required": 1 }
+    ]
   }
 ]

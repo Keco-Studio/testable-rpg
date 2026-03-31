@@ -336,5 +336,82 @@
         "choices": []
       }
     ]
+  },
+  {
+    "npcId": "npc-sanctum-herald",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "The sanctum opens before you. Beyond lies Gorak's throne — the final confrontation awaits. Are you prepared?",
+        "choices": [
+          {
+            "text": "I am ready. Let us end this.",
+            "nextNodeId": "accepted",
+            "conditions": { "flag": { "key": "act-complete-2", "value": true } },
+            "actions": {
+              "activateQuest": "final-confrontation",
+              "setFlag": { "key": "sanctum-entered", "value": true }
+            }
+          },
+          {
+            "text": "I must prepare first.",
+            "nextNodeId": "waiting"
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "Then the Veil itself watches your final step. Victory or death — this is the end.",
+        "choices": []
+      },
+      {
+        "id": "waiting",
+        "text": "The sanctum will wait. Return when you are ready to face your fate.",
+        "choices": []
+      }
+    ]
+  },
+  {
+    "npcId": "npc-epilog",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "The war is over. The Veil is restored. What comes next?",
+        "choices": [
+          {
+            "text": "I will stand with the Guard.",
+            "nextNodeId": "guard-ending",
+            "conditions": { "flag": { "key": "joined-guard", "value": true } }
+          },
+          {
+            "text": "I will serve the Mages.",
+            "nextNodeId": "mages-ending",
+            "conditions": { "flag": { "key": "joined-mages", "value": true } }
+          },
+          {
+            "text": "I walk my own path.",
+            "nextNodeId": "neutral-ending",
+            "conditions": { "flag": { "key": "joined-guard", "value": false }, "notFlag": { "key": "joined-mages", "value": true } }
+          }
+        ]
+      },
+      {
+        "id": "guard-ending",
+        "text": "The Iron Guard welcomes you, hero. The kingdom is safer with you at our side.",
+        "choices": []
+      },
+      {
+        "id": "mages-ending",
+        "text": "The Veil Mages honor your sacrifice. The lattice glows brighter with your name in its runes.",
+        "choices": []
+      },
+      {
+        "id": "neutral-ending",
+        "text": "A wanderer's heart, yet tied to Ironveil's fate. The village will remember you always.",
+        "choices": []
+      }
+    ]
   }
 ]

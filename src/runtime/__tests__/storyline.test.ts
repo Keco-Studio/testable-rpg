@@ -70,7 +70,7 @@ describe('Act I — The world before the player acts', () => {
 
   it('ten quests exist in the quest log — the story has scope', () => {
     const game = rt();
-    expect(Object.keys(game.getQuestState())).toHaveLength(10);
+    expect(Object.keys(game.getQuestState())).toHaveLength(11);
   });
 });
 
@@ -1184,6 +1184,9 @@ describe('Narrative coherence — world state makes story sense', () => {
 
     game.activateQuest('defeat-the-lieutenant');
     game.completeQuest('defeat-the-lieutenant');
+
+    game.activateQuest('final-confrontation');
+    game.completeQuest('final-confrontation');
 
     const q = game.getQuestState();
     expect(Object.values(q).every(s => s === 'COMPLETED')).toBe(true);

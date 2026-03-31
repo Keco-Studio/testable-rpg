@@ -125,6 +125,8 @@ export class GameLoopModel {
       { id: 'npc-scholar-lira', x: 420, y: 140, width: 16, height: 16, title: 'Scholar Lira' },
       { id: 'npc-solen-sacrifice', x: 560, y: 180, width: 16, height: 16, title: 'Arch-Mage Solen' },
       { id: 'npc-lieutenant-herald', x: 480, y: 80, width: 16, height: 16, title: 'Veil Ruins Herald' },
+      { id: 'npc-sanctum-herald', x: 500, y: 120, width: 16, height: 16, title: 'Sanctum Herald' },
+      { id: 'npc-epilog', x: 540, y: 160, width: 16, height: 16, title: 'Epilog Narrator' },
     ],
     dialog: {
       open: false,
@@ -246,6 +248,9 @@ export class GameLoopModel {
         this.grantExp(18);
         this.defeatedBoss = true;
         this.state.quests['main-quest'] = 'COMPLETED';
+        if (this.state.quests['final-confrontation'] === 'ACTIVE') {
+          this.state.quests['final-confrontation'] = 'COMPLETED';
+        }
       }
       if (enemyId === 'goblin-lieutenant') {
         this.grantExp(12);
@@ -541,6 +546,44 @@ export class GameLoopModel {
           },
         ],
       );
+      return;
+    }
+
+    if (npcId === 'npc-sanctum-herald') {
+      if (!this.state.flags['act-complete-2']) {
+        this.openDialog(npcId, 'You must complete the Lieutenants task before entering the sanctum.', [{ text: 'Understood', action: () => {} }]);
+        return;
+      }
+      this.openDialog(
+        npcId,
+        'The sanctum opens before you. Beyond lies Gorak\'s throne — the final confrontation awaits. Are you prepared?',
+        [
+          {
+            text: 'I am ready. Let us end this.',
+            action: () => {
+              this.state.flags['sanctum-entered'] = true;
+              this.state.quests['final-confrontation'] = 'ACTIVE';
+            },
+          },
+          {
+            text: 'I must prepare first.',
+            action: () => {},
+          },
+        ],
+      );
+      return;
+    }
+
+    if (npcId === 'npc-epilog') {
+      if (this.state.flags['joined-guard']) {
+        this.openDialog(npcId, 'The Iron Guard welcomes you, hero. The kingdom is safer with you at our side.', [{ text: 'Continue', action: () => {} }]);
+        return;
+      }
+      if (this.state.flags['joined-mages']) {
+        this.openDialog(npcId, 'The Veil Mages honor your sacrifice. The lattice glows brighter with your name in its runes.', [{ text: 'Continue', action: () => {} }]);
+        return;
+      }
+      this.openDialog(npcId, 'A wanderer\'s heart, yet tied to Ironveil\'s fate. The village will remember you always.', [{ text: 'Continue', action: () => {} }]);
       return;
     }
   }
