@@ -1,4 +1,6 @@
 import { GameLoopModel, type InputState, type SceneName } from './GameLoopModel';
+import { MapRenderer } from './map/MapRenderer';
+import { loadVillageMap } from './map/villageMap';
 
 interface SpritePalette {
   skin: string;
@@ -25,9 +27,13 @@ export class PlayableGame {
 
     this.canvas.width = 640;
     this.canvas.height = 360;
+
+    const mapData = loadVillageMap();
+    this.mapRenderer = new MapRenderer(this.ctx, mapData);
   }
 
   private readonly ctx: CanvasRenderingContext2D;
+  private readonly mapRenderer: MapRenderer;
 
   start(): void {
     window.addEventListener('keydown', this.onKeyDown);
@@ -172,91 +178,6 @@ export class PlayableGame {
     this.ctx.fillRect(x + 15, y + 15, 2, 2);
   }
 
-  private drawTownMap(): void {
-    const w = this.canvas.width;
-    const h = this.canvas.height;
-
-    this.ctx.fillStyle = '#254a36';
-    this.ctx.fillRect(0, 0, w, h);
-
-    this.ctx.fillStyle = '#2f6244';
-    this.ctx.fillRect(0, h - 88, w, 88);
-
-    this.ctx.fillStyle = '#1f3d2d';
-    for (let y = 0; y < h; y += 26) {
-      this.ctx.fillRect(0, y, w, 2);
-    }
-
-    this.ctx.fillStyle = '#3f83a8';
-    this.ctx.fillRect(0, 262, w, 42);
-    this.ctx.fillStyle = '#61a7c7';
-    this.ctx.fillRect(0, 262, w, 6);
-
-    this.ctx.fillStyle = '#8d7a5f';
-    this.ctx.fillRect(0, 152, w, 24);
-    this.ctx.fillRect(282, 18, 28, 244);
-
-    this.ctx.strokeStyle = '#6f5f47';
-    this.ctx.strokeRect(0, 152, w, 24);
-    this.ctx.strokeRect(282, 18, 28, 244);
-
-    this.ctx.fillStyle = '#7f6a4f';
-    this.ctx.fillRect(284, 246, 24, 20);
-
-    this.ctx.fillStyle = '#4c3e2d';
-    this.ctx.fillRect(530, 130, 92, 72);
-    this.ctx.fillRect(32, 64, 96, 64);
-    this.ctx.fillRect(152, 34, 100, 78);
-    this.ctx.fillRect(360, 36, 106, 82);
-
-    this.ctx.fillStyle = '#bc5f43';
-    this.ctx.beginPath();
-    this.ctx.moveTo(28, 64);
-    this.ctx.lineTo(132, 64);
-    this.ctx.lineTo(80, 34);
-    this.ctx.closePath();
-    this.ctx.fill();
-
-    this.ctx.beginPath();
-    this.ctx.moveTo(148, 34);
-    this.ctx.lineTo(256, 34);
-    this.ctx.lineTo(202, 8);
-    this.ctx.closePath();
-    this.ctx.fill();
-
-    this.ctx.beginPath();
-    this.ctx.moveTo(356, 36);
-    this.ctx.lineTo(470, 36);
-    this.ctx.lineTo(413, 8);
-    this.ctx.closePath();
-    this.ctx.fill();
-
-    this.ctx.beginPath();
-    this.ctx.moveTo(526, 130);
-    this.ctx.lineTo(626, 130);
-    this.ctx.lineTo(576, 96);
-    this.ctx.closePath();
-    this.ctx.fill();
-
-    this.ctx.fillStyle = '#d7c7a3';
-    for (let x = 44; x < 620; x += 68) {
-      this.ctx.fillRect(x, 158, 8, 12);
-    }
-    for (let y = 30; y < 248; y += 40) {
-      this.ctx.fillRect(290, y, 12, 8);
-    }
-
-    this.ctx.fillStyle = '#dbeafe';
-    this.ctx.font = '11px monospace';
-    this.ctx.fillText('NORTH GATE', 270, 16);
-    this.ctx.fillText('MARKET ROAD', 16, 148);
-    this.ctx.fillText('RIVER VEIL', 16, 258);
-    this.ctx.fillText('ELDER HALL', 34, 60);
-    this.ctx.fillText('HUNTER LODGE', 146, 132);
-    this.ctx.fillText('FACTION PLAZA', 334, 132);
-    this.ctx.fillText('GUARD BARRACKS', 500, 214);
-  }
-
   private render(): void {
     const state = this.model.getState();
     const palette = this.scenePalette(state.scene);
@@ -278,7 +199,7 @@ export class PlayableGame {
     this.ctx.globalAlpha = 1;
 
     if (state.scene === 'TownScene') {
-      this.drawTownMap();
+      this.mapRenderer.draw();
 
       for (const npc of state.npcs) {
         this.drawCharacter(npc.x - 2, npc.y - 4, {
