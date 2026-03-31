@@ -157,5 +157,75 @@
         "choices": []
       }
     ]
+  },
+  {
+    "npcId": "npc-sergeant-davan",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Sergeant Davan, Iron Guard. Captain Vera sent you? Good. The garrison at north gate is stretched thin. We need your blade on the march.",
+        "choices": [
+          {
+            "text": "I am ready to march.",
+            "nextNodeId": "accepted",
+            "conditions": { "flag": { "key": "joined-guard", "value": true } },
+            "actions": {
+              "activateQuest": "guard-march",
+              "setFlag": { "key": "davan-met", "value": true }
+            }
+          },
+          {
+            "text": "I fight for the Mages.",
+            "nextNodeId": "rejected"
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "Fall in. But watch yourself — Officer Crest has been acting strange lately. Keep your ears open.",
+        "choices": []
+      },
+      {
+        "id": "rejected",
+        "text": "Then you have no place in this formation. Move along.",
+        "choices": []
+      }
+    ]
+  },
+  {
+    "npcId": "npc-officer-crest",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Officer Crest. I... did not expect visitors. Whatever you heard — it is not what it looks like.",
+        "choices": [
+          {
+            "text": "I am reporting this to the Captain.",
+            "nextNodeId": "exposed",
+            "conditions": { "flag": { "key": "joined-guard", "value": true } },
+            "actions": {
+              "setFlag": { "key": "guard-betrayal-exposed", "value": true }
+            }
+          },
+          {
+            "text": "I saw nothing. Carry on.",
+            "nextNodeId": "covered",
+            "conditions": { "flag": { "key": "joined-guard", "value": true } }
+          }
+        ]
+      },
+      {
+        "id": "exposed",
+        "text": "You will regret this. The Guard is not as clean as you think.",
+        "choices": []
+      },
+      {
+        "id": "covered",
+        "text": "Wise. Some things are better left unseen. I will remember this.",
+        "choices": []
+      }
+    ]
   }
 ]

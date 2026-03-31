@@ -46,5 +46,21 @@
       { "id": "talk-arch-mage", "type": "TALK_TO_NPC", "required": 1 }
     ],
     "prerequisites": []
+  },
+  {
+    "id": "guard-march",
+    "title": "March Orders",
+    "prerequisites": ["faction-choice"],
+    "objectives": [
+      { "id": "talk-davan", "type": "TALK_TO_NPC", "required": 1 }
+    ]
+  },
+  {
+    "id": "expose-the-traitor",
+    "title": "Expose the Traitor",
+    "prerequisites": ["guard-march"],
+    "objectives": [
+      { "id": "confront-crest", "type": "TALK_TO_NPC", "required": 1 }
+    ]
   }
 ]

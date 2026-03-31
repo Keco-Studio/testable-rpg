@@ -19,5 +19,12 @@
     "stats": { "hp": 30, "attack": 8, "defense": 4, "speed": 5 },
     "lootTableId": "loot-boss",
     "expReward": 30
+  },
+  {
+    "id": "goblin-lieutenant",
+    "name": "Gorak's Lieutenant",
+    "stats": { "hp": 22, "attack": 7, "defense": 3, "speed": 4 },
+    "lootTableId": "loot-lieutenant",
+    "expReward": 20
   }
 ]

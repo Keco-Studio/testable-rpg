@@ -68,9 +68,9 @@ describe('Act I — The world before the player acts', () => {
     expect(flags['elder-greeted']).toBeFalsy();
   });
 
-  it('five quests exist in the quest log — the story has scope', () => {
+  it('seven quests exist in the quest log — the story has scope', () => {
     const game = rt();
-    expect(Object.keys(game.getQuestState())).toHaveLength(5);
+    expect(Object.keys(game.getQuestState())).toHaveLength(7);
   });
 });
 
@@ -911,7 +911,7 @@ describe('Narrative coherence — world state makes story sense', () => {
     expect(q['guard-patrol']).toBe('INACTIVE');
   });
 
-  it('the five-quest world has no quest that can block another from completing', () => {
+  it('the seven-quest world has no quest that can block another from completing', () => {
     // No quest has prerequisites that would create a deadlock.
     // Verify: all quests can independently reach COMPLETED.
     const game = rt();
@@ -931,6 +931,12 @@ describe('Narrative coherence — world state makes story sense', () => {
 
     game.activateQuest('veil-mending');
     game.completeQuest('veil-mending');
+
+    game.activateQuest('guard-march');
+    game.completeQuest('guard-march');
+
+    game.activateQuest('expose-the-traitor');
+    game.completeQuest('expose-the-traitor');
 
     const q = game.getQuestState();
     expect(Object.values(q).every(s => s === 'COMPLETED')).toBe(true);

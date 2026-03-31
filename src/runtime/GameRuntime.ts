@@ -220,6 +220,8 @@ const DIALOG_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objecti
   'npc-hunter': [{ questId: 'slime-hunt', objectiveId: 'talk-hunter', amount: 1 }],
   'npc-guard-captain': [{ questId: 'guard-patrol', objectiveId: 'talk-captain', amount: 1 }],
   'npc-arch-mage': [{ questId: 'veil-mending', objectiveId: 'talk-arch-mage', amount: 1 }],
+  'npc-sergeant-davan': [{ questId: 'guard-march', objectiveId: 'talk-davan', amount: 1 }],
+  'npc-officer-crest': [{ questId: 'expose-the-traitor', objectiveId: 'confront-crest', amount: 1 }],
 };
 
 const DIALOG_CHOICE_OBJECTIVE_PROGRESS: Record<

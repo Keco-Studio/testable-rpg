@@ -20,5 +20,12 @@
       { "itemId": "shield", "weight": 1 },
       { "itemId": "health-potion", "weight": 2 }
     ]
+  },
+  {
+    "id": "loot-lieutenant",
+    "drops": [
+      { "itemId": "sword", "weight": 50 },
+      { "itemId": "health-potion", "weight": 50 }
+    ]
   }
 ]
