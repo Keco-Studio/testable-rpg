@@ -47,7 +47,6 @@ export function loadVillageMap(): MapData {
 
   const zones: CollisionZone[] = [
     { id: 'river-veil', x: 0, y: 256, width: 640, height: 48, type: 'water' },
-    { id: 'elder-hall', x: 32, y: 64, width: 96, height: 64, type: 'building' },
   ];
 
   return {

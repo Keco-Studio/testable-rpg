@@ -127,13 +127,12 @@ describe('GameLoopModel — player movement', () => {
     expect(player.x).toBe(world.width - player.width);
   });
 
-  it('player is stopped by elder-hall building before reaching left world boundary', () => {
+  it('clamps player to left world boundary', () => {
     const model = inTown();
     for (let i = 0; i < 100; i++) {
       model.update({ left: true, right: false, up: false, down: false }, 100);
     }
-    // Elder-hall zone covers x=32..128; player starts at x=128 and cannot move left into it
-    expect(model.getState().player.x).toBe(128);
+    expect(model.getState().player.x).toBe(0);
   });
 
   it('player is stopped by river zone before reaching bottom world boundary', () => {
@@ -179,12 +178,8 @@ describe('GameLoopModel — NPC proximity', () => {
 
   it('returns null when player is far from all NPCs', () => {
     const model = inTown();
-    // Move up first to clear elder-hall zone, then move right far from NPCs
-    for (let i = 0; i < 20; i++) {
-      model.update({ left: false, right: false, up: true, down: false }, 100);
-    }
     for (let i = 0; i < 100; i++) {
-      model.update({ left: false, right: true, up: false, down: false }, 100);
+      model.update({ left: true, right: false, up: false, down: false }, 100);
     }
     expect(model.getNearbyNpcId()).toBeNull();
   });
@@ -222,12 +217,8 @@ describe('GameLoopModel — dialog and faction', () => {
 
   it('interact is a no-op when no NPC nearby', () => {
     const model = inTown();
-    // Move up first to clear elder-hall zone, then move right far from NPCs
-    for (let i = 0; i < 20; i++) {
-      model.update({ left: false, right: false, up: true, down: false }, 100);
-    }
     for (let i = 0; i < 100; i++) {
-      model.update({ left: false, right: true, up: false, down: false }, 100);
+      model.update({ left: true, right: false, up: false, down: false }, 100);
     }
     model.interact();
     expect(model.getState().dialog.open).toBe(false);

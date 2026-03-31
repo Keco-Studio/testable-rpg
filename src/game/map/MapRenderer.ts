@@ -3,11 +3,11 @@ import type { MapData, Tile } from './types';
 type TileColors = Record<Tile['type'], string[]>;
 
 const COLORS: TileColors = {
-  grass: ['#254a36', '#2a5040', '#2f6244', '#274d38'],
-  path:  ['#8d7a5f', '#7d6a4f', '#8d7a5f', '#7d6a4f'],
-  water: ['#3f83a8', '#4892b8', '#3f83a8', '#3a7da0'],
-  wall:  ['#4c3e2d', '#4a3c2a', '#4c3e2d', '#4a3c2a'],
-  floor: ['#3d322a', '#3a302a', '#3d322a', '#3a302a'],
+  grass: ['#2d6b4a', '#347a54', '#3a8860', '#2d6b4a'],
+  path:  ['#a08c6c', '#8d7a5f', '#a08c6c', '#8d7a5f'],
+  water: ['#2e7db8', '#3a90cc', '#2e7db8', '#4892b8'],
+  wall:  ['#5c4a32', '#6a5538', '#5c4a32', '#6a5538'],
+  floor: ['#4a3c28', '#564535', '#4a3c28', '#564535'],
 };
 
 export class MapRenderer {
@@ -33,8 +33,13 @@ export class MapRenderer {
     this.ctx.fillStyle = colors[variant % colors.length];
     this.ctx.fillRect(px, py, size, size);
 
+    // Subtle tile grid lines on all tiles
+    this.ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+    this.ctx.lineWidth = 0.5;
+    this.ctx.strokeRect(px + 0.5, py + 0.5, size - 1, size - 1);
+
     if (tile.type === 'grass' && variant % 3 === 0) {
-      this.ctx.fillStyle = '#1f3d2d';
+      this.ctx.fillStyle = 'rgba(0,0,0,0.1)';
       this.ctx.fillRect(px, py, size, 1);
     }
     if (tile.type === 'water') {
