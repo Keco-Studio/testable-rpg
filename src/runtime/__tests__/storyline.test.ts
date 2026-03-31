@@ -68,9 +68,9 @@ describe('Act I — The world before the player acts', () => {
     expect(flags['elder-greeted']).toBeFalsy();
   });
 
-  it('seven quests exist in the quest log — the story has scope', () => {
+  it('nine quests exist in the quest log — the story has scope', () => {
     const game = rt();
-    expect(Object.keys(game.getQuestState())).toHaveLength(7);
+    expect(Object.keys(game.getQuestState())).toHaveLength(9);
   });
 });
 
@@ -937,6 +937,12 @@ describe('Narrative coherence — world state makes story sense', () => {
 
     game.activateQuest('expose-the-traitor');
     game.completeQuest('expose-the-traitor');
+
+    game.activateQuest('decode-the-ruins');
+    game.completeQuest('decode-the-ruins');
+
+    game.activateQuest('solens-sacrifice');
+    game.completeQuest('solens-sacrifice');
 
     const q = game.getQuestState();
     expect(Object.values(q).every(s => s === 'COMPLETED')).toBe(true);

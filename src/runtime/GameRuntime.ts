@@ -222,6 +222,8 @@ const DIALOG_OBJECTIVE_PROGRESS: Record<string, Array<{ questId: string; objecti
   'npc-arch-mage': [{ questId: 'veil-mending', objectiveId: 'talk-arch-mage', amount: 1 }],
   'npc-sergeant-davan': [{ questId: 'guard-march', objectiveId: 'talk-davan', amount: 1 }],
   'npc-officer-crest': [{ questId: 'expose-the-traitor', objectiveId: 'confront-crest', amount: 1 }],
+  'npc-scholar-lira': [{ questId: 'decode-the-ruins', objectiveId: 'talk-lira', amount: 1 }],
+  'npc-solen-sacrifice': [{ questId: 'solens-sacrifice', objectiveId: 'consult-solen-act2', amount: 1 }],
 };
 
 const DIALOG_CHOICE_OBJECTIVE_PROGRESS: Record<

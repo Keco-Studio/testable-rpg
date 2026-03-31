@@ -62,5 +62,21 @@
     "objectives": [
       { "id": "confront-crest", "type": "TALK_TO_NPC", "required": 1 }
     ]
+  },
+  {
+    "id": "decode-the-ruins",
+    "title": "Decode the Ruins",
+    "prerequisites": ["faction-choice"],
+    "objectives": [
+      { "id": "talk-lira", "type": "TALK_TO_NPC", "required": 1 }
+    ]
+  },
+  {
+    "id": "solens-sacrifice",
+    "title": "Solen's Sacrifice",
+    "prerequisites": ["decode-the-ruins"],
+    "objectives": [
+      { "id": "consult-solen-act2", "type": "TALK_TO_NPC", "required": 1 }
+    ]
   }
 ]

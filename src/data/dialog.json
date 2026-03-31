@@ -231,5 +231,75 @@
         "choices": []
       }
     ]
+  },
+  {
+    "npcId": "npc-scholar-lira",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "Scholar Lira. I have been deciphering the ruin texts near the eastern cave — the Veil was not always a barrier. Once it was a living lattice, and I think I know how to reactivate it. Arch-Mage Solen must hear this.",
+        "choices": [
+          {
+            "text": "Tell me what you know.",
+            "nextNodeId": "accepted",
+            "conditions": { "flag": { "key": "joined-mages", "value": true } },
+            "actions": {
+              "activateQuest": "decode-the-ruins",
+              "setFlag": { "key": "lira-met", "value": true }
+            }
+          },
+          {
+            "text": "The Guard will handle it.",
+            "nextNodeId": "rejected"
+          }
+        ]
+      },
+      {
+        "id": "accepted",
+        "text": "Bring this to Solen. But warn him — the reactivation will draw deeply from the caster. He needs to know the cost before he commits.",
+        "choices": []
+      },
+      {
+        "id": "rejected",
+        "text": "Then I hope the Guard's steel is enough. Ancient magic is not so easily ignored.",
+        "choices": []
+      }
+    ]
+  },
+  {
+    "npcId": "npc-solen-sacrifice",
+    "rootNodeId": "root",
+    "nodes": [
+      {
+        "id": "root",
+        "text": "I have read Lira's findings. The lattice reactivation is possible — but it will cost me everything. I go into this knowing that. Unless... did you come to warn me?",
+        "choices": [
+          {
+            "text": "I am warning you. Find another way.",
+            "nextNodeId": "warned",
+            "conditions": { "flag": { "key": "joined-mages", "value": true } },
+            "actions": {
+              "setFlag": { "key": "solen-warned", "value": true }
+            }
+          },
+          {
+            "text": "The Veil must be mended. Do what you must.",
+            "nextNodeId": "resolute",
+            "conditions": { "flag": { "key": "joined-mages", "value": true } }
+          }
+        ]
+      },
+      {
+        "id": "warned",
+        "text": "A warning, then. I will not waste it. Perhaps there is a way to split the cost across more anchors. I will try.",
+        "choices": []
+      },
+      {
+        "id": "resolute",
+        "text": "Then it is decided. Whatever comes — the Veil will hold. That is what matters.",
+        "choices": []
+      }
+    ]
   }
 ]
