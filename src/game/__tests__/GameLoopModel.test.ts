@@ -142,8 +142,8 @@ describe('GameLoopModel — player movement', () => {
       model.update({ left: false, right: false, up: false, down: true }, 100);
     }
     const { player } = model.getState();
-    // River zone starts at y=262; player (height=16) cannot cross it
-    expect(player.y).toBeLessThan(262);
+    // River zone starts at y=256; player (height=16) cannot cross it
+    expect(player.y).toBeLessThan(256);
     expect(player.y).toBeGreaterThan(200);
   });
 

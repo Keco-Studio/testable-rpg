@@ -46,10 +46,10 @@ describe('loadVillageMap', () => {
     expect(map.zones.length).toBeGreaterThan(0);
   });
 
-  it('includes the river-veil collision zone at y=262', () => {
+  it('includes the river-veil collision zone at y=256', () => {
     const river = map.zones.find((z) => z.id === 'river-veil');
     expect(river).toBeDefined();
-    expect(river!.y).toBe(262);
+    expect(river!.y).toBe(256);
     expect(river!.width).toBe(640);
     expect(river!.type).toBe('water');
   });
