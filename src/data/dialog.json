@@ -206,13 +206,17 @@
             "nextNodeId": "exposed",
             "conditions": { "flag": { "key": "joined-guard", "value": true } },
             "actions": {
+              "activateQuest": "expose-the-traitor",
               "setFlag": { "key": "guard-betrayal-exposed", "value": true }
             }
           },
           {
             "text": "I saw nothing. Carry on.",
             "nextNodeId": "covered",
-            "conditions": { "flag": { "key": "joined-guard", "value": true } }
+            "conditions": { "flag": { "key": "joined-guard", "value": true } },
+            "actions": {
+              "activateQuest": "expose-the-traitor"
+            }
           }
         ]
       },

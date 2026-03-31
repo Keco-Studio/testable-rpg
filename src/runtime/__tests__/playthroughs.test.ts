@@ -656,6 +656,30 @@ describe('Dialog — NPC interactions', () => {
     rt.triggerDialog('npc-hunter');
     expect(rt.getDialogState()?.npcId).toBe('npc-hunter');
   });
+
+  it('crest dialog activates the expose-the-traitor quest when confronting', () => {
+    const rt = makeRuntime();
+    rt.triggerDialog('npc-faction-leader');
+    rt.choose(0);
+    rt.triggerDialog('npc-sergeant-davan');
+    rt.choose(0);
+    expect(rt.getQuestState()['expose-the-traitor']).toBe('INACTIVE');
+    rt.triggerDialog('npc-officer-crest');
+    rt.choose(0);
+    expect(rt.getQuestState()['expose-the-traitor']).toBe('COMPLETED');
+  });
+
+  it('crest dialog activates the expose-the-traitor quest even when covering it up', () => {
+    const rt = makeRuntime();
+    rt.triggerDialog('npc-faction-leader');
+    rt.choose(0);
+    rt.triggerDialog('npc-sergeant-davan');
+    rt.choose(0);
+    expect(rt.getQuestState()['expose-the-traitor']).toBe('INACTIVE');
+    rt.triggerDialog('npc-officer-crest');
+    rt.choose(1);
+    expect(rt.getQuestState()['expose-the-traitor']).toBe('COMPLETED');
+  });
 });
 
 // ---------------------------------------------------------------------------
