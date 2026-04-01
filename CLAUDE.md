@@ -37,4 +37,24 @@ TypeScript ^5.4: Follow standard conventions
 - Storyline browser test specs:
   - `tests/e2e/game-storyline-demo.spec.ts`
   - `tests/e2e/storyline-demo.spec.ts`
+## Test Contract System
+
+Every game system has a contract file in `contracts/` listing behavioral guarantees.
+
+**Rule for all code changes:**
+1. Identify which contract items are affected by the change
+2. Write/update tests that verify those items
+3. Run `npm test` and confirm all tests pass
+4. Mark contract items as Tested in the relevant contract file
+5. New features must add contract items AND tests — no exceptions
+
+Contract files:
+- `contracts/combat.contract.md`
+- `contracts/inventory.contract.md`
+- `contracts/quest.contract.md`
+- `contracts/dialog.contract.md`
+- `contracts/save.contract.md`
+- `contracts/storyline.contract.md`
+- `contracts/game-loop.contract.md`
+- `contracts/player-experience.contract.md`
 <!-- MANUAL ADDITIONS END -->
