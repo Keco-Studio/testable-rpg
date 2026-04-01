@@ -86,3 +86,57 @@ describe('deriveActFlags', () => {
     expect(result['act-complete-2']).toBeUndefined();
   });
 });
+
+describe('full storyline path completion', () => {
+  it('guard path is completable start-to-finish', () => {
+    let flags: Record<string, boolean> = {};
+
+    // Act I: Join guard faction
+    flags = resolveFactionExclusivity(flags, 'joined-guard', true);
+    expect(resolveFactionGate(flags, 'guard')).toBe(true);
+    expect(resolveFactionGate(flags, 'mages')).toBe(false);
+
+    // Act I complete: faction chosen
+    const act1Derived = deriveActFlags(flags);
+    expect(act1Derived['act-complete-1']).toBe(true);
+    flags = { ...flags, ...act1Derived };
+
+    // Act II: Defeat lieutenant
+    flags['lieutenant-defeated'] = true;
+    const act2Derived = deriveActFlags(flags);
+    expect(act2Derived['act-complete-2']).toBe(true);
+    flags = { ...flags, ...act2Derived };
+
+    // Final state: all acts complete, guard faction
+    expect(flags['joined-guard']).toBe(true);
+    expect(flags['joined-mages']).toBe(false);
+    expect(flags['act-complete-1']).toBe(true);
+    expect(flags['act-complete-2']).toBe(true);
+  });
+
+  it('mage path is completable start-to-finish', () => {
+    let flags: Record<string, boolean> = {};
+
+    // Act I: Join mages faction
+    flags = resolveFactionExclusivity(flags, 'joined-mages', true);
+    expect(resolveFactionGate(flags, 'mages')).toBe(true);
+    expect(resolveFactionGate(flags, 'guard')).toBe(false);
+
+    // Act I complete: faction chosen
+    const act1Derived = deriveActFlags(flags);
+    expect(act1Derived['act-complete-1']).toBe(true);
+    flags = { ...flags, ...act1Derived };
+
+    // Act II: Defeat lieutenant
+    flags['lieutenant-defeated'] = true;
+    const act2Derived = deriveActFlags(flags);
+    expect(act2Derived['act-complete-2']).toBe(true);
+    flags = { ...flags, ...act2Derived };
+
+    // Final state: all acts complete, mages faction
+    expect(flags['joined-mages']).toBe(true);
+    expect(flags['joined-guard']).toBe(false);
+    expect(flags['act-complete-1']).toBe(true);
+    expect(flags['act-complete-2']).toBe(true);
+  });
+});
