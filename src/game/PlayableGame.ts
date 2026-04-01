@@ -245,6 +245,12 @@ export class PlayableGame {
     this.ctx.fillText(`Scene: ${state.scene}`, 12, 24);
     this.ctx.fillText('Arrows move | E talk | B battle | W/L/F outcome | R reset', 12, 46);
 
+    if (state.scene === 'TitleScene') {
+      this.ctx.fillStyle = '#7dd3fc';
+      this.ctx.font = 'bold 22px monospace';
+      this.ctx.fillText('Press ENTER to start', this.canvas.width / 2 - 140, this.canvas.height / 2);
+    }
+
     if (state.dialog.open) {
       this.ctx.fillStyle = 'rgba(10, 20, 30, 0.9)';
       this.ctx.fillRect(18, this.canvas.height - 126, this.canvas.width - 36, 108);

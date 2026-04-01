@@ -33,4 +33,50 @@ describe('SaveSystem', () => {
 
     expect(save.load(3)).toBeNull();
   });
+
+  it('overwriting a slot replaces data completely', () => {
+    const storage = new MemoryStorageAdapter();
+    const save = new SaveSystem(storage);
+
+    const first = { ...sample, scene: 'TownScene' as const };
+    const second = { ...sample, scene: 'BattleScene' as const };
+
+    save.save(1, first);
+    expect(save.load(1)?.scene).toBe('TownScene');
+
+    save.save(1, second);
+    expect(save.load(1)?.scene).toBe('BattleScene');
+    expect(save.load(1)).toEqual(second);
+  });
+
+  it('loading malformed JSON returns null, never throws', () => {
+    const storage = new MemoryStorageAdapter();
+    storage.setItem('ironveil-save:1', 'not valid json {{{');
+
+    const save = new SaveSystem(storage);
+    expect(() => save.load(1)).not.toThrow();
+    expect(save.load(1)).toBeNull();
+  });
+
+  it('all 3 slots are independent', () => {
+    const storage = new MemoryStorageAdapter();
+    const save = new SaveSystem(storage);
+
+    const data1 = { ...sample, scene: 'TownScene' as const };
+    const data2 = { ...sample, scene: 'BattleScene' as const };
+    const data3 = { ...sample, scene: 'GameOverScene' as const };
+
+    save.save(1, data1);
+    save.save(2, data2);
+    save.save(3, data3);
+
+    expect(save.load(1)?.scene).toBe('TownScene');
+    expect(save.load(2)?.scene).toBe('BattleScene');
+    expect(save.load(3)?.scene).toBe('GameOverScene');
+
+    save.clear(2);
+    expect(save.load(1)?.scene).toBe('TownScene');
+    expect(save.load(2)).toBeNull();
+    expect(save.load(3)?.scene).toBe('GameOverScene');
+  });
 });

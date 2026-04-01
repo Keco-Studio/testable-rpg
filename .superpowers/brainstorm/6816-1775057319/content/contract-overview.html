@@ -1,0 +1,117 @@
+<h2>Test Contract System — Overview</h2>
+<p class="subtitle">Every system gets a contract defining what MUST be tested. No code ships without satisfying its contract.</p>
+
+<div class="section">
+  <h3>How It Works</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 20px 0;">
+    <div style="background: #1a2332; border: 1px solid #334155; border-radius: 8px; padding: 16px;">
+      <div style="color: #60a5fa; font-size: 24px; font-weight: bold; margin-bottom: 8px;">1</div>
+      <h3 style="margin: 0 0 8px 0;">Define Contracts</h3>
+      <p style="color: #94a3b8; font-size: 14px;">For each system, list the behaviors and invariants that MUST hold. These become the game's living spec.</p>
+    </div>
+    <div style="background: #1a2332; border: 1px solid #334155; border-radius: 8px; padding: 16px;">
+      <div style="color: #60a5fa; font-size: 24px; font-weight: bold; margin-bottom: 8px;">2</div>
+      <h3 style="margin: 0 0 8px 0;">Test Against Contracts</h3>
+      <p style="color: #94a3b8; font-size: 14px;">Each contract item maps to one or more test cases. Gaps are visible. Coverage is measured against the contract, not lines of code.</p>
+    </div>
+    <div style="background: #1a2332; border: 1px solid #334155; border-radius: 8px; padding: 16px;">
+      <div style="color: #60a5fa; font-size: 24px; font-weight: bold; margin-bottom: 8px;">3</div>
+      <h3 style="margin: 0 0 8px 0;">Enforce on Every Change</h3>
+      <p style="color: #94a3b8; font-size: 14px;">New features must add contract items AND tests. AI cannot deliver code without proving it satisfies the contract.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Three Test Layers</h3>
+  <div style="margin: 16px 0;">
+    <div style="background: linear-gradient(135deg, #1e3a5f, #1a2332); border: 2px solid #3b82f6; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+      <h3 style="color: #60a5fa; margin: 0 0 4px 0;">Layer 1: Unit Contracts</h3>
+      <p style="color: #cbd5e1; margin: 0; font-size: 14px;">Each engine system (Combat, Inventory, Quest, Dialog, Save, RNG, Storyline) has a contract listing every behavior that must be verified in isolation. <strong>Example:</strong> "CombatSystem: dead actors cannot take turns, critical hits deal 2x, status effects tick down each turn"</p>
+    </div>
+    <div style="background: linear-gradient(135deg, #1e3a5f, #1a2332); border: 2px solid #8b5cf6; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+      <h3 style="color: #a78bfa; margin: 0 0 4px 0;">Layer 2: Integration Contracts</h3>
+      <p style="color: #cbd5e1; margin: 0; font-size: 14px;">Cross-system behaviors that must work together. <strong>Example:</strong> "Winning a battle grants EXP → triggers level-up → updates stats → save/load preserves new level"</p>
+    </div>
+    <div style="background: linear-gradient(135deg, #1e3a5f, #1a2332); border: 2px solid #f59e0b; border-radius: 8px; padding: 16px;">
+      <h3 style="color: #fbbf24; margin: 0 0 4px 0;">Layer 3: Player Experience Contracts</h3>
+      <p style="color: #cbd5e1; margin: 0; font-size: 14px;">End-to-end scenarios verifying the actual player journey. <strong>Example:</strong> "Player walks to Elder → talks → accepts quest → fights goblin → wins → quest completes → can save and reload"</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Current Coverage vs Contract Target</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <thead>
+      <tr style="border-bottom: 2px solid #334155;">
+        <th style="text-align: left; padding: 8px; color: #94a3b8;">System</th>
+        <th style="text-align: center; padding: 8px; color: #94a3b8;">Current Tests</th>
+        <th style="text-align: center; padding: 8px; color: #94a3b8;">Status</th>
+        <th style="text-align: left; padding: 8px; color: #94a3b8;">Biggest Gap</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">Combat</td>
+        <td style="text-align: center; padding: 8px;">248 lines</td>
+        <td style="text-align: center; padding: 8px; color: #22c55e;">●  Good</td>
+        <td style="padding: 8px;">Critical hits, multi-enemy coordination</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">Inventory</td>
+        <td style="text-align: center; padding: 8px;">249 lines</td>
+        <td style="text-align: center; padding: 8px; color: #22c55e;">●  Good</td>
+        <td style="padding: 8px;">Equipment requirements, stat interactions</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">Quest</td>
+        <td style="text-align: center; padding: 8px;">234 lines</td>
+        <td style="text-align: center; padding: 8px; color: #22c55e;">●  Good</td>
+        <td style="padding: 8px;">Reward mechanics, prerequisite chains</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">Dialog</td>
+        <td style="text-align: center; padding: 8px;">69 lines</td>
+        <td style="text-align: center; padding: 8px; color: #ef4444;">●  Weak</td>
+        <td style="padding: 8px;">Multi-node trees, condition combos, state tracking</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">Save</td>
+        <td style="text-align: center; padding: 8px;">37 lines</td>
+        <td style="text-align: center; padding: 8px; color: #ef4444;">●  Weak</td>
+        <td style="padding: 8px;">Data integrity, corruption recovery, migrations</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">Storyline</td>
+        <td style="text-align: center; padding: 8px;">88 lines</td>
+        <td style="text-align: center; padding: 8px; color: #f59e0b;">●  Basic</td>
+        <td style="padding: 8px;">Full progression, branching consequences</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">GameLoopModel</td>
+        <td style="text-align: center; padding: 8px;">250 lines</td>
+        <td style="text-align: center; padding: 8px; color: #22c55e;">●  Good</td>
+        <td style="padding: 8px;">Multiple NPCs in proximity, animation states</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">PlayableGame</td>
+        <td style="text-align: center; padding: 8px;">0 lines</td>
+        <td style="text-align: center; padding: 8px; color: #ef4444;">●  None</td>
+        <td style="padding: 8px;">Everything — input, rendering, RAF loop</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1e293b;">
+        <td style="padding: 8px;">MapRenderer</td>
+        <td style="text-align: center; padding: 8px;">0 lines</td>
+        <td style="text-align: center; padding: 8px; color: #ef4444;">●  None</td>
+        <td style="padding: 8px;">Everything — tile rendering, labels, animation</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;">Player Experience (E2E)</td>
+        <td style="text-align: center; padding: 8px;">~5 scenarios</td>
+        <td style="text-align: center; padding: 8px; color: #f59e0b;">●  Basic</td>
+        <td style="padding: 8px;">Full quest arcs, faction consequences, inventory mgmt</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
