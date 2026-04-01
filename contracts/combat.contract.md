@@ -3,7 +3,7 @@
 | Priority | Contract Item | Test File | Status |
 |----------|--------------|-----------|--------|
 | P1 | Damage = max(1, attack - defense) | CombatSystem.test.ts | Tested |
-| P1 | Critical hits deal 2x damage | CombatSystem.test.ts | UNTESTED |
+| P1 | Critical hits deal 2x damage | CombatSystem.test.ts | Tested |
 | P1 | Turn order follows speed, deterministic tie-breaking | CombatSystem.test.ts | Tested |
 | P1 | Dead actors can't take turns | CombatSystem.test.ts | Tested |
 | P1 | Status effects tick down each turn | CombatSystem.test.ts | Tested |

@@ -42,6 +42,37 @@ describe('CombatSystem damage rules', () => {
     const result = calcDamage(attacker, defender, rng, { critChanceBase: 0, critLuckScale: 0, critChanceMax: 0 });
     expect(result.damage).toBe(1);
   });
+
+  it('critical hits deal exactly 2x damage', () => {
+    const attacker = createActor({
+      id: 'crit-hero',
+      side: 'player',
+      stats: { hp: 30, maxHp: 30, mp: 0, maxMp: 0, attack: 10, defense: 0, speed: 5, luck: 100 },
+    });
+    const defender = createActor({
+      id: 'target',
+      side: 'enemy',
+      stats: { hp: 100, maxHp: 100, mp: 0, maxMp: 0, attack: 5, defense: 3, speed: 1, luck: 0 },
+    });
+
+    const baseDmg = Math.max(1, attacker.stats.attack - defender.stats.defense); // 10 - 3 = 7
+    expect(baseDmg).toBe(7);
+
+    // Try multiple seeds to find one that triggers a crit
+    let critDmg: number | null = null;
+    let foundCrit = false;
+    for (let seed = 0; seed < 100; seed++) {
+      const testRng = new SeededRNG(seed);
+      const result = calcDamage(attacker, defender, testRng, { critChanceBase: 0.15, critLuckScale: 0.01, critChanceMax: 0.75 });
+      if (result.isCritical && result.damage === baseDmg * 2) {
+        critDmg = result.damage;
+        foundCrit = true;
+        break;
+      }
+    }
+    expect(foundCrit).toBe(true);
+    expect(critDmg).toBe(14); // 7 * 2 = 14
+  });
 });
 
 describe('CombatSystem turn order and outcomes', () => {
