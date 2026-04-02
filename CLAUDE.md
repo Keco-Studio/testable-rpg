@@ -57,4 +57,20 @@ Contract files:
 - `contracts/storyline.contract.md`
 - `contracts/game-loop.contract.md`
 - `contracts/player-experience.contract.md`
+
+## Game Quality Framework
+
+Before writing or modifying game code, consult `fun/README.md` for quality principles.
+
+**5 Quality Layers** (each with testable invariants in `fun/`):
+1. Visual Clarity (`fun/visual-clarity.md`) — colors, labels, tile readability
+2. World Feel (`fun/world-feel.md`) — map connectivity, zone variety, NPC placement
+3. Moment-to-Moment (`fun/moment-to-moment.md`) — feedback, transitions, input response
+4. Session Arc (`fun/session-arc.md`) — reward pacing, progression, anti-patterns
+5. Story & Agency (`fun/story-agency.md`) — choices, consequences, faction divergence
+
+**Rule for game changes:**
+1. Identify which quality layer invariants are affected
+2. Run the corresponding `fun-*.test.ts` file to verify
+3. New gameplay features should satisfy relevant invariants
 <!-- MANUAL ADDITIONS END -->
